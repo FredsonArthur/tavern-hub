@@ -23,14 +23,32 @@
     <script>
         function rollD20() {
             const resultDiv = document.getElementById('result');
-            // Animação simples
             resultDiv.innerText = "...";
+            
             setTimeout(() => {
                 const roll = Math.floor(Math.random() * 20) + 1;
                 resultDiv.innerText = roll;
-                if(roll === 20) resultDiv.style.color = "#00ff00"; // Crítico!
-                else if(roll === 1) resultDiv.style.color = "#ff0000"; // Falha!
+
+                if(roll === 20) resultDiv.style.color = "#00ff00";
+                else if(roll === 1) resultDiv.style.color = "#ff0000";
                 else resultDiv.style.color = "#ffcc00";
+
+                // Enviando para o servidor
+                fetch('/salvar-rolagem/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Importante: No futuro precisaremos do X-CSRFToken aqui
+                    },
+                    body: JSON.stringify({ "resultado": roll }) // Garante que a chave é "resultado"
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Falha na requisição');
+                    return response.json();
+                })
+                .then(data => console.log('Sucesso:', data))
+                .catch(error => console.error('Erro no Fetch:', error));
+
             }, 300);
         }
     </script>
