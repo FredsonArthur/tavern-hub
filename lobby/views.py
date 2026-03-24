@@ -1,3 +1,6 @@
+# lobby/views.py
 from django.shortcuts import render
 
-# Create your views here.
+def dashboard(request):
+    # Por enquanto, apenas renderiza o HTML
+    return render(request, 'lobby/index.html')
