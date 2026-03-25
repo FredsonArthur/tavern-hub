@@ -23,7 +23,8 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 - [x] Modelagem de Banco de Dados para persistência de rolagens.
 - [x] Registro no Admin do Django para controle do mestre.
 - [x] Conexão Front-End -> Back-End (Salvar rolagens via Fetch API/JSON).
-- [x] **Log de Atividades (Exibição das últimas rolagens na tela para os jogadores).**
+- [x] Log de Atividades (Exibição das últimas rolagens na tela para os jogadores).
+- [x] **Identificação de Jogador (Captura de nome via interface e salvamento dinâmico).**
 - [ ] Widget completo de múltiplos dados (D4, D6, D10, D12, D100).
 - [ ] Lista de Jogadores online com avatares.
 
@@ -40,4 +41,4 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 ---
 
 ## 📝 Notas de Desenvolvimento
-O projeto agora possui um fluxo completo de leitura e escrita: os dados são gerados no cliente, salvos no servidor e recuperados para exibição em um Log de Combate dinâmico. O próximo passo técnico envolve a expansão do set de dados e a preparação para comunicação em tempo real.
+O projeto agora permite que cada jogador se identifique antes de rolar os dados, garantindo que o Log de Combate seja personalizado e informativo. A comunicação entre o frontend e o backend está consolidada, permitindo o envio e recebimento de dados complexos via JSON. O próximo foco será a expansão para múltiplos tipos de dados e o início da Fase 2.

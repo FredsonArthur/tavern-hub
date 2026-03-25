@@ -11,24 +11,31 @@ def dashboard(request):
 
 @csrf_exempt
 def salvar_rolagem(request):
-    """Recebe o resultado do dado via Fetch API e salva no banco de dados."""
+    """Recebe o resultado e o nome do jogador via Fetch API e salva no banco de dados."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             print(f"Recebido para salvar: {data}")
             
             resultado_valor = data.get('resultado')
+            # Captura o nome do jogador enviado pelo JavaScript
+            nome_jogador = data.get('jogador', 'Aventureiro')
             
             if resultado_valor is None:
                 return JsonResponse({'status': 'erro', 'message': 'Resultado vazio'}, status=400)
 
+            # Cria o registro utilizando o nome dinâmico enviado
             nova_rolagem = Rolagem.objects.create(
-                jogador="Aventureiro", # No futuro, usaremos request.user.username
+                jogador=nome_jogador,
                 tipo_dado="D20",
                 resultado=int(resultado_valor)
             )
             
-            return JsonResponse({'status': 'sucesso', 'id': nova_rolagem.id})
+            return JsonResponse({
+                'status': 'sucesso', 
+                'id': nova_rolagem.id,
+                'jogador': nome_jogador
+            })
         except Exception as e:
             print(f"Erro no processamento: {e}")
             return JsonResponse({'status': 'erro', 'message': str(e)}, status=400)
@@ -40,12 +47,12 @@ def listar_rolagens(request):
     # Busca as 10 rolagens mais recentes (ordenadas por data decrescente)
     rolagens = Rolagem.objects.all().order_by('-data_hora')[:10]
     
-    # Transforma os dados em uma lista de dicionários
+    # Transforma os dados em uma lista de dicionários para o Log
     dados = [
         {
             "jogador": r.jogador,
             "resultado": r.resultado,
-            "data": r.data_hora.strftime('%H:%M:%S') # Formata para apenas Hora:Minuto:Segundo
+            "data": r.data_hora.strftime('%H:%M:%S')
         } for r in rolagens
     ]
     
