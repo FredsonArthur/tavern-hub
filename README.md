@@ -22,12 +22,12 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 - [x] Interface inicial com botão de Rolagem de Dados (D20 via JS).
 - [x] Modelagem de Banco de Dados para persistência de rolagens.
 - [x] Registro no Admin do Django para controle do mestre.
-- [x] **Conexão Front-End -> Back-End (Salvar rolagens via Fetch API/JSON).**
+- [x] Conexão Front-End -> Back-End (Salvar rolagens via Fetch API/JSON).
+- [x] **Log de Atividades (Exibição das últimas rolagens na tela para os jogadores).**
 - [ ] Widget completo de múltiplos dados (D4, D6, D10, D12, D100).
 - [ ] Lista de Jogadores online com avatares.
 
 ### Fase 2: O Coração do RPG (Interatividade)
-- [ ] Log de Atividades (Exibir as últimas rolagens na tela para os jogadores).
 - [ ] Chat da taverna com suporte a Markdown.
 - [ ] Sistema de Iniciativa (Tracker) ordenável.
 - [ ] Painel do Mestre (DM Screen) para controle de NPCs.
@@ -40,4 +40,4 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 ---
 
 ## 📝 Notas de Desenvolvimento
-O projeto validou com sucesso a comunicação assíncrona entre o navegador e o servidor. O próximo desafio é transformar os dados salvos em um "Log de Combate" visual para que a interface reflita o histórico do banco de dados em tempo real.
+O projeto agora possui um fluxo completo de leitura e escrita: os dados são gerados no cliente, salvos no servidor e recuperados para exibição em um Log de Combate dinâmico. O próximo passo técnico envolve a expansão do set de dados e a preparação para comunicação em tempo real.
