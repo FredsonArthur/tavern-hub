@@ -6,8 +6,17 @@
     <style>
         body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding-bottom: 50px; }
         .dice-container { margin-top: 20px; padding: 20px; border: 2px solid #444; display: inline-block; border-radius: 10px; background: #252525; }
-        #result { font-size: 3rem; color: #ffcc00; margin: 20px; font-weight: bold; }
-        button { background: #8b0000; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+        #result { font-size: 3rem; color: #ffcc00; margin: 20px; font-weight: bold; min-height: 60px; }
+        
+        /* Grid de botões para múltiplos dados */
+        .dice-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button { background: #8b0000; color: white; border: none; padding: 10px; font-size: 1rem; cursor: pointer; border-radius: 5px; transition: 0.3s; }
         button:hover { background: #ff0000; transform: scale(1.05); }
 
         /* Estilo para o campo de nome */
@@ -49,6 +58,7 @@
         .log-entry .time { color: #666; font-size: 0.8rem; }
         .log-entry span.player { color: #aaa; }
         .log-entry span.value { color: #ffcc00; font-weight: bold; margin-left: 5px; }
+        .log-entry span.dice-type { color: #8b0000; font-size: 0.85rem; font-style: italic; }
     </style>
 </head>
 <body>
@@ -60,7 +70,15 @@
 
     <div class="dice-container">
         <div id="result">?</div>
-        <button onclick="rollD20()">Rolar D20</button>
+        <div class="dice-grid">
+            <button onclick="rollDice(4)">D4</button>
+            <button onclick="rollDice(6)">D6</button>
+            <button onclick="rollDice(8)">D8</button>
+            <button onclick="rollDice(10)">D10</button>
+            <button onclick="rollDice(12)">D12</button>
+            <button onclick="rollDice(20)">D20</button>
+            <button onclick="rollDice(100)">D100</button>
+        </div>
     </div>
 
     <div class="log-container">
@@ -69,7 +87,6 @@
     </div>
 
     <script>
-        // Função para buscar as últimas rolagens do servidor
         function atualizarLog() {
             fetch('/listar-rolagens/')
                 .then(response => response.json())
@@ -84,6 +101,7 @@
                             <div>
                                 <span class="player">${r.jogador}</span> rolou 
                                 <span class="value">${r.resultado}</span>
+                                <span class="dice-type">(${r.tipo_dado})</span>
                             </div>
                             <span class="time">${r.data}</span>
                         `;
@@ -93,22 +111,22 @@
                 .catch(error => console.error('Erro ao buscar log:', error));
         }
 
-        function rollD20() {
+        function rollDice(faces) {
             const resultDiv = document.getElementById('result');
             const nomeInput = document.getElementById('playerName');
-            const nomeValue = nomeInput.value.trim() || "Aventureiro"; // Pega o nome ou usa padrão
+            const nomeValue = nomeInput.value.trim() || "Aventureiro";
             
             resultDiv.innerText = "...";
             
             setTimeout(() => {
-                const roll = Math.floor(Math.random() * 20) + 1;
+                const roll = Math.floor(Math.random() * faces) + 1;
                 resultDiv.innerText = roll;
 
-                if(roll === 20) resultDiv.style.color = "#00ff00";
-                else if(roll === 1) resultDiv.style.color = "#ff0000";
+                // Destaque visual para acertos críticos ou falhas (baseado no D20)
+                if(faces === 20 && roll === 20) resultDiv.style.color = "#00ff00";
+                else if(faces === 20 && roll === 1) resultDiv.style.color = "#ff0000";
                 else resultDiv.style.color = "#ffcc00";
 
-                // Enviando para o servidor com o nome do jogador
                 fetch('/salvar-rolagem/', {
                     method: 'POST',
                     headers: {
@@ -116,7 +134,8 @@
                     },
                     body: JSON.stringify({ 
                         "resultado": roll,
-                        "jogador": nomeValue // Agora enviando o nome dinâmico
+                        "jogador": nomeValue,
+                        "tipo_dado": "D" + faces
                     })
                 })
                 .then(response => {
@@ -125,7 +144,7 @@
                 })
                 .then(data => {
                     console.log('Sucesso:', data);
-                    atualizarLog(); // Atualiza o log na tela
+                    atualizarLog();
                 })
                 .catch(error => console.error('Erro no Fetch:', error));
 

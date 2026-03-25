@@ -24,8 +24,8 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 - [x] Registro no Admin do Django para controle do mestre.
 - [x] Conexão Front-End -> Back-End (Salvar rolagens via Fetch API/JSON).
 - [x] Log de Atividades (Exibição das últimas rolagens na tela para os jogadores).
-- [x] **Identificação de Jogador (Captura de nome via interface e salvamento dinâmico).**
-- [ ] Widget completo de múltiplos dados (D4, D6, D10, D12, D100).
+- [x] Identificação de Jogador (Captura de nome via interface e salvamento dinâmico).
+- [x] **Widget completo de múltiplos dados (D4, D6, D8, D10, D12, D20, D100).**
 - [ ] Lista de Jogadores online com avatares.
 
 ### Fase 2: O Coração do RPG (Interatividade)
@@ -41,4 +41,4 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 ---
 
 ## 📝 Notas de Desenvolvimento
-O projeto agora permite que cada jogador se identifique antes de rolar os dados, garantindo que o Log de Combate seja personalizado e informativo. A comunicação entre o frontend e o backend está consolidada, permitindo o envio e recebimento de dados complexos via JSON. O próximo foco será a expansão para múltiplos tipos de dados e o início da Fase 2.
+O sistema agora suporta a gama completa de dados de RPG (D4 a D100), com o backend processando dinamicamente tanto o tipo do dado quanto a identificação do jogador. O Log de Combate reflete essas informações em tempo real após cada clique, consolidando a infraestrutura de comunicação assíncrona do projeto.

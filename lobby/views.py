@@ -11,30 +11,33 @@ def dashboard(request):
 
 @csrf_exempt
 def salvar_rolagem(request):
-    """Recebe o resultado e o nome do jogador via Fetch API e salva no banco de dados."""
+    """Recebe o resultado, o nome do jogador e o tipo de dado via Fetch API e salva no banco de dados."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             print(f"Recebido para salvar: {data}")
             
             resultado_valor = data.get('resultado')
-            # Captura o nome do jogador enviado pelo JavaScript
+            # Captura o nome do jogador enviado pelo JavaScript ou usa o padrão
             nome_jogador = data.get('jogador', 'Aventureiro')
+            # Captura o tipo de dado enviado pelo JavaScript ou usa D20 como padrão
+            tipo_dado_rolado = data.get('tipo_dado', 'D20')
             
             if resultado_valor is None:
                 return JsonResponse({'status': 'erro', 'message': 'Resultado vazio'}, status=400)
 
-            # Cria o registro utilizando o nome dinâmico enviado
+            # Cria o registro utilizando os dados dinâmicos enviados pelo widget
             nova_rolagem = Rolagem.objects.create(
                 jogador=nome_jogador,
-                tipo_dado="D20",
+                tipo_dado=tipo_dado_rolado,
                 resultado=int(resultado_valor)
             )
             
             return JsonResponse({
                 'status': 'sucesso', 
                 'id': nova_rolagem.id,
-                'jogador': nome_jogador
+                'jogador': nome_jogador,
+                'tipo_dado': tipo_dado_rolado
             })
         except Exception as e:
             print(f"Erro no processamento: {e}")
@@ -47,10 +50,11 @@ def listar_rolagens(request):
     # Busca as 10 rolagens mais recentes (ordenadas por data decrescente)
     rolagens = Rolagem.objects.all().order_by('-data_hora')[:10]
     
-    # Transforma os dados em uma lista de dicionários para o Log
+    # Transforma os objetos em uma lista de dicionários para o Log, incluindo o tipo do dado
     dados = [
         {
             "jogador": r.jogador,
+            "tipo_dado": r.tipo_dado,
             "resultado": r.resultado,
             "data": r.data_hora.strftime('%H:%M:%S')
         } for r in rolagens
