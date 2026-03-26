@@ -35,7 +35,7 @@
         /* Estilos do Log de Combate */
         .log-container {
             margin-top: 40px;
-            max-width: 500px;
+            max-width: 600px; /* Aumentado levemente para caber a data completa */
             margin-left: auto;
             margin-right: auto;
             background: #222;
@@ -50,15 +50,16 @@
         .log-entry { 
             border-bottom: 1px solid #333; 
             padding: 8px 0; 
-            font-size: 0.95rem; 
+            font-size: 0.9rem; /* Ajustado para melhor leitura com data */
             display: flex; 
             justify-content: space-between;
+            align-items: center;
         }
         .log-entry:last-child { border-bottom: none; }
-        .log-entry .time { color: #666; font-size: 0.8rem; }
-        .log-entry span.player { color: #aaa; }
+        .log-entry .time { color: #666; font-size: 0.75rem; margin-left: 10px; text-align: right; min-width: 120px; }
+        .log-entry span.player { color: #aaa; font-weight: bold; }
         .log-entry span.value { color: #ffcc00; font-weight: bold; margin-left: 5px; }
-        .log-entry span.dice-type { color: #8b0000; font-size: 0.85rem; font-style: italic; }
+        .log-entry span.dice-type { color: #8b0000; font-size: 0.8rem; font-style: italic; }
     </style>
 </head>
 <body>
@@ -97,6 +98,7 @@
                     data.rolagens.forEach(r => {
                         const entry = document.createElement('div');
                         entry.className = 'log-entry';
+                        // O r.data agora contém dia/mês/ano hora:minuto:segundo
                         entry.innerHTML = `
                             <div>
                                 <span class="player">${r.jogador}</span> rolou 
@@ -122,7 +124,6 @@
                 const roll = Math.floor(Math.random() * faces) + 1;
                 resultDiv.innerText = roll;
 
-                // Destaque visual para acertos críticos ou falhas (baseado no D20)
                 if(faces === 20 && roll === 20) resultDiv.style.color = "#00ff00";
                 else if(faces === 20 && roll === 1) resultDiv.style.color = "#ff0000";
                 else resultDiv.style.color = "#ffcc00";

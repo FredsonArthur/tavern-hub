@@ -3,6 +3,7 @@ import json
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone  # Importação necessária para conversão de fuso horário
 from .models import Rolagem
 
 def dashboard(request):
@@ -46,18 +47,22 @@ def salvar_rolagem(request):
     return JsonResponse({'status': 'metodo_nao_permitido'}, status=405)
 
 def listar_rolagens(request):
-    """Retorna as últimas 10 rolagens em formato JSON para o Log de Combate."""
+    """Retorna as últimas 10 rolagens em formato JSON com data e horário corrigidos para Brasília."""
     # Busca as 10 rolagens mais recentes (ordenadas por data decrescente)
     rolagens = Rolagem.objects.all().order_by('-data_hora')[:10]
     
-    # Transforma os objetos em uma lista de dicionários para o Log, incluindo o tipo do dado
-    dados = [
-        {
+    # Transforma os objetos em uma lista de dicionários para o Log
+    dados = []
+    for r in rolagens:
+        # localtime() converte o horário UTC do banco para o fuso horário local
+        horario_local = timezone.localtime(r.data_hora)
+        
+        dados.append({
             "jogador": r.jogador,
             "tipo_dado": r.tipo_dado,
             "resultado": r.resultado,
-            "data": r.data_hora.strftime('%H:%M:%S')
-        } for r in rolagens
-    ]
+            # Atualizado para incluir a data (dia/mês/ano) e o horário
+            "data": horario_local.strftime('%d/%m/%Y %H:%M:%S') 
+        })
     
     return JsonResponse({'rolagens': dados})
