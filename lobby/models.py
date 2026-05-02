@@ -1,20 +1,46 @@
-# lobby/models.py
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
-class Rolagem(models.Model):
-    # Campo para armazenar o nome do personagem/jogador
-    jogador = models.CharField(max_length=100, default="Aventureiro")
-    
-    # Campo para armazenar o tipo de dado (D4, D6, D20, etc.)
-    tipo_dado = models.CharField(max_length=10, default="D20")
-    
-    # Valor obtido na rolagem
-    resultado = models.IntegerField()
-    
-    # Data e hora do registro para ordenação no Log de Combate
-    data_hora = models.DateTimeField(default=timezone.now)
+# Entidade 1: Mesa (Onde os jogadores se reúnem)
+class Mesa(models.Model):
+    titulo = models.CharField(max_length=100)
+    descricao = models.TextField()
+    mestre = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mesas_gerenciadas')
+    data_criacao = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        # Representação amigável no Admin do Django
-        return f"{self.jogador} tirou {self.resultado} no {self.tipo_dado}"
+        return self.titulo
+
+# Entidade 2: Personagem (Atributos do jogador)
+class Personagem(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    nome = models.CharField(max_length=100)
+    raca = models.CharField(max_length=50)
+    classe = models.CharField(max_length=50)
+    nivel = models.IntegerField(default=1)
+    vida_atual = models.IntegerField(default=10)
+    historia = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.nome} - Nível {self.nivel}"
+
+# Entidade 3: Rolagem (Agora vinculada a Personagem e Mesa para o Log)
+class Rolagem(models.Model):
+    # Relacionamos a rolagem a um personagem e a uma mesa específica
+    personagem = models.ForeignKey(Personagem, on_delete=models.CASCADE, null=True, blank=True)
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # Campos base para o registro dos dados[cite: 1]
+    jogador_nome = models.CharField(max_length=100, default="Aventureiro")
+    tipo_dado = models.CharField(max_length=10, default="D20")[cite: 1]
+    resultado = models.IntegerField()[cite: 1]
+    data_hora = models.DateTimeField(default=timezone.now)[cite: 1]
+
+    def __str__(self):
+        # Mostra o nome do personagem se existir, senão usa o nome padrão[cite: 1]
+        nome = self.personagem.nome if self.personagem else self.jogador_nome
+        return f"{nome} tirou {self.resultado} no {self.tipo_dado}"[cite: 1]
+
+    class Meta:
+        ordering = ['-data_hora']
