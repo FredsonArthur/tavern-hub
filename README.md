@@ -31,11 +31,16 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 - [x] **Suíte de Testes:** Validação automatizada de rotas e integridade de dados[cite: 4].
 
 ### Fase 3: Lógica Avançada & Auditoria (Concluída ✅)
-- [x] **Soft Delete de Personagens:** Implementação de exclusão lógica. Personagens deletados são desativados no banco, mas mantidos para fins de auditoria ou recuperação[cite: 3].
-- [x] **Paradigma Publish-Subscribe (Signals):** Sistema de monitoramento automático. Dispara alertas de críticos (D20 Natural) e sugestão de dano, além de logs de auditoria de mesas no terminal[cite: 3, 4].
-- [x] **API com Filtros Dinâmicos:** Refinamento da leitura (Read) permitindo que o log de combate seja filtrado por tipo de dado (D20, D6, etc.) via parâmetros de URL[cite: 3, 4].
+- [x] **Soft Delete de Personagens:** Implementação de exclusão lógica para manutenção de integridade[cite: 3].
+- [x] **Paradigma Publish-Subscribe (Signals):** Monitoramento automático de críticos e logs de auditoria no terminal[cite: 3, 4].
+- [x] **API com Filtros Dinâmicos:** Refinamento da leitura permitindo filtragem por tipo de dado via URL[cite: 3, 4].
 
-### Fase 4: A Magia do Tempo Real (Próximos Passos 🚧)
+### Fase 4: Inteligência de Dados & Segurança (Concluída ✅)
+- [x] **Painel de Estatísticas (Aggregations):** Uso de `Avg`, `Count` e `Max` para processar médias de resultados e ranking de jogadores ativos diretamente no banco de dados[cite: 3, 6].
+- [x] **Sistema de Rollback (Versionamento):** Implementação de edição auditável de rolagens. O sistema preserva o `resultado_anterior` e o motivo da alteração para transparência da mesa[cite: 3, 6].
+- [x] **Mesa Protegida (Permissões):** Restrição de acesso baseada em perfis. Apenas o Mestre (Dono da Mesa) possui permissão para realizar Rollbacks ou gerenciar configurações críticas[cite: 3, 6].
+
+### Fase 5: A Magia do Tempo Real (Próximos Passos 🚧)
 - [ ] Sincronização de rolagens via WebSockets (Django Channels).
 - [ ] Sistema de Iniciativa (Tracker) ordenável.
 - [ ] Implementação de Django Messages para feedback visual de ações (UX).
