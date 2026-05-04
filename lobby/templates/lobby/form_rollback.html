@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>TavernHub - Rollback de Rolagem</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .rollback-card { background: #252525; border: 1px solid #8b0000; border-radius: 12px; padding: 30px; max-width: 500px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .original-value { font-size: 1.2rem; color: #aaa; text-decoration: line-through; }
+        .new-value-label { color: #ffcc00; font-weight: bold; }
+        .form-control { background: #111; border: 1px solid #444; color: white; }
+        .form-control:focus { background: #151515; border-color: #8b0000; color: white; box-shadow: none; }
+        .btn-save { background: #8b0000; border: none; font-weight: bold; }
+        .btn-save:hover { background: #ff0000; }
+        .btn-cancel { color: #888; text-decoration: none; }
+        .btn-cancel:hover { color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="rollback-card">
+        <h2 class="mb-4">🔄 Corrigir Rolagem</h2>
+        
+        <div class="mb-4">
+            <p class="mb-1 text-muted">Jogador: <strong>{{ rolagem.personagem.nome|default:rolagem.jogador_nome }}</strong></p>
+            <p class="mb-1">Dado: <span class="badge bg-dark">{{ rolagem.tipo_dado }}</span></p>
+            <p>Valor Original: <span class="original-value">{{ rolagem.resultado }}</span></p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label class="new-value-label mb-2">Novo Resultado:</label>
+                <input type="number" name="novo_resultado" class="form-control" placeholder="Digite o valor correto" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-muted mb-2 small">Motivo da Correção (Auditoria):</label>
+                <input type="text" name="motivo" class="form-control" placeholder="Ex: Erro de digitação / Bônus esquecido">
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-save btn-lg">Confirmar Alteração</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-cancel mt-2">Cancelar e Voltar</a>
+            </div>
+        </form>
+
+        <p class="mt-4 small text-muted text-center italic">
+            *Esta ação será registrada no histórico da sessão para fins de auditoria[cite: 3].
+        </p>
+    </div>
+
+</body>
+</html>

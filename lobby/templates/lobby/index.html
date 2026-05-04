@@ -23,6 +23,9 @@
         .log-entry span.player { color: #aaa; font-weight: bold; }
         .log-entry span.value { color: #ffcc00; font-weight: bold; margin-left: 5px; }
         .log-entry span.dice-type { color: #8b0000; font-size: 0.8rem; font-style: italic; }
+        .badge-edit { font-size: 0.6rem; background: #444; color: #ffcc00; margin-left: 5px; padding: 2px 5px; border-radius: 3px; }
+        .btn-rollback { color: #666; text-decoration: none; font-size: 0.8rem; margin-left: 10px; }
+        .btn-rollback:hover { color: #ffcc00; }
     </style>
 </head>
 <body>
@@ -30,6 +33,8 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'dashboard' %}">🎲 TavernHub</a>
             <div class="navbar-nav ms-auto">
+                <!-- NOVO: Link para o Painel de Estatísticas[cite: 5] -->
+                <a href="{% url 'painel_estatisticas' %}" class="btn btn-outline-warning me-2">📊 Estatísticas</a>
                 <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">Minhas Mesas</a>
                 <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">Meus Personagens</a>
             </div>
@@ -42,7 +47,6 @@
                 <select id="personagemSelect" class="form-select border-danger">
                     <option value="">Selecione seu Personagem</option>
                     {% for p in personagens %}
-                        <!-- O loop exibe apenas personagens com ativo=True -->
                         <option value="{{ p.id }}">{{ p.nome }} ({{ p.classe }})</option>
                     {% endfor %}
                 </select>
@@ -65,17 +69,31 @@
         </div>
 
         <div class="log-container">
-            <h3>📜 Log de Combate</h3>
+            <div class="d-flex justify-content-between align-items-center border-bottom mb-2">
+                <h3 class="border-0">📜 Log de Combate</h3>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">Filtrar</button>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="#" onclick="atualizarLog(''); return false;">Todos</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="atualizarLog('D20'); return false;">Apenas D20</a></li>
+                    </ul>
+                </div>
+            </div>
             <div id="log-lista" class="log-lista">
-                <!-- As rolagens serão carregadas via API aqui -->
+                <!-- Rolagens via API -->
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap Bundle with Popper para o dropdown funcionar -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // PONTO 2: Função de listagem atualizada para as novas rotas de API[cite: 4]
-        function atualizarLog() {
-            fetch('/api/rolagem/listar/') // Rota correta definida no urls.py[cite: 4]
+        function atualizarLog(tipo = '') {
+            let url = '/api/rolagem/listar/';
+            if(tipo) url += '?tipo=' + tipo;
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const lista = document.getElementById('log-lista');
@@ -84,11 +102,20 @@
                     data.rolagens.forEach(r => {
                         const entry = document.createElement('div');
                         entry.className = 'log-entry';
+                        
+                        // Verifica se houve Rollback (edição)
+                        const editTag = r.editado ? '<span class="badge-edit">EDITADO</span>' : '';
+                        
+                        // Link para o Rollback se o usuário for mestre (simplificado visualmente)[cite: 5]
+                        const rollbackBtn = `<a href="/rolagem/rollback/${r.id}/" class="btn-rollback" title="Corrigir Valor">🔄</a>`;
+
                         entry.innerHTML = `
                             <div>
                                 <span class="player">${r.jogador}</span> rolou 
                                 <span class="value">${r.resultado}</span>
                                 <span class="dice-type">(${r.tipo_dado})</span>
+                                ${editTag}
+                                ${rollbackBtn}
                             </div>
                             <span class="time">${r.data}</span>
                         `;
@@ -117,12 +144,10 @@
                 const roll = Math.floor(Math.random() * faces) + 1;
                 resultDiv.innerText = roll;
                 
-                // Feedback visual de cores para D20[cite: 5]
                 if(faces === 20 && roll === 20) resultDiv.style.color = "#00ff00";
                 else if(faces === 20 && roll === 1) resultDiv.style.color = "#ff0000";
                 else resultDiv.style.color = "#ffcc00";
 
-                // PONTO 3: Chamada de salvamento atualizada para a API[cite: 4]
                 fetch('/api/rolagem/salvar/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -134,14 +159,11 @@
                     })
                 })
                 .then(response => response.json())
-                .then(data => { 
-                    atualizarLog(); // Atualiza o log e dispara o Signal no backend[cite: 3]
-                })
-                .catch(error => console.error('Erro ao salvar rolagem:', error));
+                .then(data => { atualizarLog(); })
+                .catch(error => console.error('Erro ao salvar:', error));
             }, 300);
         }
 
-        // Carrega o log assim que a página abre[cite: 5]
         document.addEventListener('DOMContentLoaded', () => atualizarLog());
     </script>
 </body>

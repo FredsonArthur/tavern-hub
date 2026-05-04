@@ -4,53 +4,77 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Count, Max # Importação para Agregações
 from .models import Rolagem, Personagem, Mesa
 from .forms import PersonagemForm, MesaForm
 
-# --- VIEWS DE NAVEGAÇÃO ---
+# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Data Visualization / Aggregation) ---
 
-def dashboard(request):
-    """Renderiza a página principal com foco em personagens ATIVOS."""
-    personagens = []
-    if request.user.is_authenticated:
-        # PONTO 2: Filtro para mostrar apenas personagens que não sofreram Soft Delete[cite: 3]
-        personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
-    return render(request, 'lobby/index.html', {'personagens': personagens})
+@login_required
+def painel_estatisticas(request):
+    """Gera inteligência de dados processada diretamente no Banco de Dados[cite: 3, 6]."""
+    stats = {
+        'total_rolagens': Rolagem.objects.count(),
+        'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
+        'maior_valor': Rolagem.objects.aggregate(Max('resultado'))['resultado__max'] or 0,
+        'rank_jogadores': Rolagem.objects.values('jogador_nome').annotate(total=Count('id')).order_by('-total')[:5]
+    }
+    return render(request, 'lobby/estatisticas.html', {'stats': stats})
 
-# --- CRUD DE MESA (Entidade 1) ---
+# --- REQUISITO: SISTEMA DE ROLLBACK (Controle de Versão) ---
+
+@login_required
+def rollback_rolagem(request, pk):
+    """Permite corrigir um valor salvando a versão anterior para auditoria[cite: 3, 6]."""
+    rolagem = get_object_or_404(Rolagem, pk=pk)
+    
+    # Segurança: Apenas o mestre da mesa ou superusuário pode editar[cite: 3, 6]
+    if rolagem.mesa and rolagem.mesa.mestre != request.user and not request.user.is_superuser:
+        return JsonResponse({'status': 'erro', 'message': 'Apenas o mestre pode editar'}, status=403)
+
+    if request.method == 'POST':
+        novo_valor = request.POST.get('novo_resultado')
+        if novo_valor:
+            rolagem.resultado_anterior = rolagem.resultado
+            rolagem.resultado = int(novo_valor)
+            rolagem.editado = True
+            rolagem.motivo_edicao = request.POST.get('motivo', 'Correção de erro')
+            rolagem.save()
+            return redirect('dashboard')
+            
+    return render(request, 'lobby/form_rollback.html', {'rolagem': rolagem})
+
+# --- CRUD DE MESA (Entidade 1 - Protegida) ---
 
 @login_required
 def lista_mesas(request):
-    """Lista as mesas onde o usuário logado é o mestre[cite: 4]."""
     mesas = Mesa.objects.filter(mestre=request.user)
     return render(request, 'lobby/lista_mesas.html', {'mesas': mesas})
 
 @login_required
 def criar_mesa(request):
-    """Cria uma nova mesa vinculada ao mestre logado[cite: 4]."""
     if request.method == 'POST':
         form = MesaForm(request.POST)
         if form.is_valid():
             mesa = form.save(commit=False)
-            mesa.mestre = request.user
+            mesa.mestre = request.user 
             mesa.save()
             return redirect('lista_mesas')
     else:
         form = MesaForm()
     return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Nova Mesa'})
 
-# --- CRUD DE PERSONAGEM (Entidade 2) ---
+# --- CRUD DE PERSONAGEM (Entidade 2 - Com Soft Delete) ---
 
 @login_required
 def lista_personagens(request):
-    """Lista todos os personagens ATIVOS do usuário."""
-    # PONTO 2: Refinamento do READ para ignorar os inativos[cite: 3]
+    """Lista personagens ativos (Refinamento do Read)[cite: 3, 6]."""
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
     return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
 
 @login_required
 def criar_personagem(request):
-    """Cria um novo personagem vinculado ao usuário[cite: 4]."""
+    """Cria um novo personagem vinculado ao usuário logado (Restaurada)[cite: 3, 4, 6]."""
     if request.method == 'POST':
         form = PersonagemForm(request.POST)
         if form.is_valid():
@@ -64,7 +88,7 @@ def criar_personagem(request):
 
 @login_required
 def editar_personagem(request, pk):
-    """Edita um personagem existente[cite: 4]."""
+    """Edita um personagem existente (Restaurada)[cite: 3, 4, 6]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         form = PersonagemForm(request.POST, instance=personagem)
@@ -77,75 +101,63 @@ def editar_personagem(request, pk):
 
 @login_required
 def excluir_personagem(request, pk):
-    """
-    PONTO 3: IMPLEMENTAÇÃO DE SOFT DELETE[cite: 3]
-    O personagem não é removido do banco, apenas marcado como inativo.
-    """
+    """Exclusão lógica (Soft Delete)[cite: 3, 6]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
-        personagem.ativo = False  # Soft Delete em vez de .delete()[cite: 3]
+        personagem.ativo = False 
         personagem.save()
         return redirect('lista_personagens')
     return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
 
-# --- LÓGICA DE ROLAGENS (Entidade 3 - API & CRUD) ---
+# --- LÓGICA DE ROLAGENS (Entidade 3 - API) ---
 
 @csrf_exempt
 def salvar_rolagem(request):
-    """Salva o resultado e dispara o sinal de Pub-Sub via Signals[cite: 3]."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            resultado_valor = data.get('resultado')
-            tipo_dado_rolado = data.get('tipo_dado', 'D20')
             personagem_id = data.get('personagem_id')
-            
-            personagem_instancia = None
-            if personagem_id:
-                personagem_instancia = Personagem.objects.filter(id=personagem_id, ativo=True).first()
+            personagem = Personagem.objects.filter(id=personagem_id, ativo=True).first() if personagem_id else None
 
             nova_rolagem = Rolagem.objects.create(
-                personagem=personagem_instancia,
+                personagem=personagem,
+                mesa=personagem.mesa if personagem else None,
                 jogador_nome=data.get('jogador', 'Aventureiro'),
-                tipo_dado=tipo_dado_rolado,
-                resultado=int(resultado_valor)
+                tipo_dado=data.get('tipo_dado', 'D20'),
+                resultado=int(data.get('resultado'))
             )
-            
-            return JsonResponse({'status': 'sucesso', 'resultado': resultado_valor})
+            return JsonResponse({'status': 'sucesso'})
         except Exception as e:
             return JsonResponse({'status': 'erro', 'message': str(e)}, status=400)
-            
-    return JsonResponse({'status': 'metodo_nao_permitido'}, status=405)
+    return JsonResponse({'status': 'erro'}, status=405)
 
 def listar_rolagens(request):
-    """
-    PONTO 2: FILTROS DINÂMICOS NA API (Refinamento do READ)[cite: 3]
-    Permite filtrar por tipo de dado via URL: /api/rolagens/?tipo=D20
-    """
+    """API com filtros dinâmicos e suporte a Rollback[cite: 3, 6]."""
     tipo_filtro = request.GET.get('tipo')
     rolagens = Rolagem.objects.all().order_by('-data_hora')
     
     if tipo_filtro:
-        rolagens = rolagens.filter(tipo_dado=tipo_filtro) # Filtro no banco[cite: 3]
+        rolagens = rolagens.filter(tipo_dado=tipo_filtro)
     
     dados = []
     for r in rolagens[:10]:
-        horario_local = timezone.localtime(r.data_hora)
-        nome_exibicao = r.personagem.nome if r.personagem else r.jogador_nome
-        
         dados.append({
-            "jogador": nome_exibicao,
+            "jogador": r.personagem.nome if r.personagem else r.jogador_nome,
             "tipo_dado": r.tipo_dado,
             "resultado": r.resultado,
-            "data": horario_local.strftime('%H:%M:%S')
+            "data": timezone.localtime(r.data_hora).strftime('%H:%M:%S'),
+            "editado": r.editado,
+            "id": r.id
         })
-    
     return JsonResponse({'rolagens': dados})
 
 @login_required
 def limpar_log(request):
-    """Remove todas as rolagens do log (Delete físico)[cite: 4]."""
-    if request.method == 'POST':
+    if request.user.is_staff: 
         Rolagem.objects.all().delete()
-        return JsonResponse({'status': 'sucesso', 'message': 'Log limpo com sucesso'})
-    return JsonResponse({'status': 'metodo_nao_permitido'}, status=405)
+        return JsonResponse({'status': 'sucesso'})
+    return JsonResponse({'status': 'erro', 'message': 'Sem permissão'}, status=403)
+
+def dashboard(request):
+    personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else []
+    return render(request, 'lobby/index.html', {'personagens': personagens})
