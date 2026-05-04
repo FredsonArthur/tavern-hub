@@ -15,7 +15,6 @@ class Mesa(models.Model):
 # Entidade 2: Personagem (Atributos do jogador)
 class Personagem(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    # ADICIONADO: Relacionamento com a Mesa para o Requisito 3
     mesa = models.ForeignKey(Mesa, on_delete=models.SET_NULL, null=True, blank=True, related_name="personagens")
     nome = models.CharField(max_length=100)
     raca = models.CharField(max_length=50)
@@ -23,9 +22,15 @@ class Personagem(models.Model):
     nivel = models.IntegerField(default=1)
     vida_atual = models.IntegerField(default=10)
     historia = models.TextField(blank=True)
+    
+    # IMPLEMENTADO: Campo para Soft Delete
+    # Se ativo for False, o personagem é considerado "excluído" da interface, 
+    # mas permanece no banco para auditoria ou recuperação.
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nome} - Nível {self.nivel}"
+        status = "" if self.ativo else " (Inativo)"
+        return f"{self.nome} - Nível {self.nivel}{status}"
 
 # Entidade 3: Rolagem (Vinculada a Personagem e Mesa para o Log)
 class Rolagem(models.Model):
