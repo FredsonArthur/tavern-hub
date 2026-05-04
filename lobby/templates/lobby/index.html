@@ -3,59 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>TavernHub - Lobby</title>
+    <!-- Adicionei o Bootstrap para os formulários de personagens funcionarem -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding-bottom: 50px; }
         .dice-container { margin-top: 20px; padding: 20px; border: 2px solid #444; display: inline-block; border-radius: 10px; background: #252525; }
         #result { font-size: 3rem; color: #ffcc00; margin: 20px; font-weight: bold; min-height: 60px; }
-        
-        /* Grid de botões para múltiplos dados */
-        .dice-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        button { background: #8b0000; color: white; border: none; padding: 10px; font-size: 1rem; cursor: pointer; border-radius: 5px; transition: 0.3s; }
-        button:hover { background: #ff0000; transform: scale(1.05); }
-
-        /* Estilo para o campo de nome */
-        .player-setup { margin-top: 30px; }
-        #playerName { 
-            padding: 10px; 
-            border-radius: 5px; 
-            border: 1px solid #444; 
-            background: #222; 
-            color: white; 
-            width: 250px; 
-            text-align: center; 
-            font-size: 1rem;
-        }
-
-        /* Estilos do Log de Combate */
-        .log-container {
-            margin-top: 40px;
-            max-width: 600px; /* Aumentado levemente para caber a data completa */
-            margin-left: auto;
-            margin-right: auto;
-            background: #222;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            text-align: left;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
+        .dice-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        button.dice-btn { background: #8b0000; color: white; border: none; padding: 10px; font-size: 1rem; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+        button.dice-btn:hover { background: #ff0000; transform: scale(1.05); }
+        #playerName { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; width: 250px; text-align: center; font-size: 1rem; }
+        .log-container { margin-top: 40px; max-width: 600px; margin-left: auto; margin-right: auto; background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .log-container h3 { border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; color: #8b0000; }
         .log-lista { max-height: 300px; overflow-y: auto; }
-        .log-entry { 
-            border-bottom: 1px solid #333; 
-            padding: 8px 0; 
-            font-size: 0.9rem; /* Ajustado para melhor leitura com data */
-            display: flex; 
-            justify-content: space-between;
-            align-items: center;
-        }
-        .log-entry:last-child { border-bottom: none; }
+        .log-entry { border-bottom: 1px solid #333; padding: 8px 0; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
         .log-entry .time { color: #666; font-size: 0.75rem; margin-left: 10px; text-align: right; min-width: 120px; }
         .log-entry span.player { color: #aaa; font-weight: bold; }
         .log-entry span.value { color: #ffcc00; font-weight: bold; margin-left: 5px; }
@@ -63,8 +24,17 @@
     </style>
 </head>
 <body>
-    <h1>🎲 TavernHub</h1>
-    
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">🎲 TavernHub</a>
+            <div>
+                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-danger">Meus Personagens</a>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}
+    <!-- CONTEÚDO PADRÃO DO LOBBY (SÓ APARECE NA HOME) -->
     <div class="player-setup">
         <input type="text" id="playerName" placeholder="Nome do seu Personagem" maxlength="20">
     </div>
@@ -72,13 +42,13 @@
     <div class="dice-container">
         <div id="result">?</div>
         <div class="dice-grid">
-            <button onclick="rollDice(4)">D4</button>
-            <button onclick="rollDice(6)">D6</button>
-            <button onclick="rollDice(8)">D8</button>
-            <button onclick="rollDice(10)">D10</button>
-            <button onclick="rollDice(12)">D12</button>
-            <button onclick="rollDice(20)">D20</button>
-            <button onclick="rollDice(100)">D100</button>
+            <button class="dice-btn" onclick="rollDice(4)">D4</button>
+            <button class="dice-btn" onclick="rollDice(6)">D6</button>
+            <button class="dice-btn" onclick="rollDice(8)">D8</button>
+            <button class="dice-btn" onclick="rollDice(10)">D10</button>
+            <button class="dice-btn" onclick="rollDice(12)">D12</button>
+            <button class="dice-btn" onclick="rollDice(20)">D20</button>
+            <button class="dice-btn" onclick="rollDice(100)">D100</button>
         </div>
     </div>
 
@@ -86,6 +56,7 @@
         <h3>📜 Log de Combate</h3>
         <div id="log-lista" class="log-lista"></div>
     </div>
+    {% endblock %}
 
     <script>
         function atualizarLog() {
@@ -93,12 +64,11 @@
                 .then(response => response.json())
                 .then(data => {
                     const lista = document.getElementById('log-lista');
+                    if(!lista) return;
                     lista.innerHTML = ''; 
-
                     data.rolagens.forEach(r => {
                         const entry = document.createElement('div');
                         entry.className = 'log-entry';
-                        // O r.data agora contém dia/mês/ano hora:minuto:segundo
                         entry.innerHTML = `
                             <div>
                                 <span class="player">${r.jogador}</span> rolou 
@@ -117,41 +87,24 @@
             const resultDiv = document.getElementById('result');
             const nomeInput = document.getElementById('playerName');
             const nomeValue = nomeInput.value.trim() || "Aventureiro";
-            
             resultDiv.innerText = "...";
-            
             setTimeout(() => {
                 const roll = Math.floor(Math.random() * faces) + 1;
                 resultDiv.innerText = roll;
-
                 if(faces === 20 && roll === 20) resultDiv.style.color = "#00ff00";
                 else if(faces === 20 && roll === 1) resultDiv.style.color = "#ff0000";
                 else resultDiv.style.color = "#ffcc00";
 
                 fetch('/salvar-rolagem/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        "resultado": roll,
-                        "jogador": nomeValue,
-                        "tipo_dado": "D" + faces
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "resultado": roll, "jogador": nomeValue, "tipo_dado": "D" + faces })
                 })
-                .then(response => {
-                    if (!response.ok) throw new Error('Falha na requisição');
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Sucesso:', data);
-                    atualizarLog();
-                })
-                .catch(error => console.error('Erro no Fetch:', error));
-
+                .then(response => response.json())
+                .then(data => { atualizarLog(); })
+                .catch(error => console.error('Erro:', error));
             }, 300);
         }
-
         document.addEventListener('DOMContentLoaded', atualizarLog);
     </script>
 </body>

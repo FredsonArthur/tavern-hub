@@ -31,16 +31,16 @@ class Rolagem(models.Model):
     personagem = models.ForeignKey(Personagem, on_delete=models.CASCADE, null=True, blank=True)
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, null=True, blank=True)
     
-    # Campos base para o registro dos dados[cite: 1]
+    # Campos base para o registro dos dados
     jogador_nome = models.CharField(max_length=100, default="Aventureiro")
-    tipo_dado = models.CharField(max_length=10, default="D20")[cite: 1]
-    resultado = models.IntegerField()[cite: 1]
-    data_hora = models.DateTimeField(default=timezone.now)[cite: 1]
+    tipo_dado = models.CharField(max_length=10, default="D20")
+    resultado = models.IntegerField()
+    data_hora = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        # Mostra o nome do personagem se existir, senão usa o nome padrão[cite: 1]
+        # Mostra o nome do personagem se existir, senão usa o nome padrão
         nome = self.personagem.nome if self.personagem else self.jogador_nome
-        return f"{nome} tirou {self.resultado} no {self.tipo_dado}"[cite: 1]
+        return f"{nome} tirou {self.resultado} no {self.tipo_dado}"
 
     class Meta:
         ordering = ['-data_hora']
