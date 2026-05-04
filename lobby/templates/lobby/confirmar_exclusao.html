@@ -1,0 +1,17 @@
+{% extends 'lobby/index.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card bg-dark text-white border-danger p-5 shadow-lg">
+        <h2 class="text-danger mb-4">Tem certeza?</h2>
+        <p class="lead">Você está prestes a excluir o personagem: <strong>{{ objeto.nome }}</strong></p>
+        <p class="text-muted small">Essa ação não pode ser desfeita.</p>
+        
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-lg me-2">Sim, Excluir</button>
+            <a href="{% url 'lista_personagens' %}" class="btn btn-secondary btn-lg">Não, Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

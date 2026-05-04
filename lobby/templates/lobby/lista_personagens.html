@@ -1,0 +1,40 @@
+{% extends 'lobby/index.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white">Meus Personagens</h2>
+        <a href="{% url 'criar_personagem' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Novo Personagem
+        </a>
+    </div>
+
+    <div class="row">
+        {% for personagem in personagens %}
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">{{ personagem.nome }}</h5>
+                    <p class="card-text">
+                        <strong>Classe:</strong> {{ personagem.classe }}<br>
+                        <strong>Nível:</strong> {{ personagem.nivel }}
+                    </p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'editar_personagem' personagem.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                        <a href="{% url 'excluir_personagem' personagem.pk %}" class="btn btn-sm btn-danger">Excluir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-muted text-center">Você ainda não possui personagens cadastrados.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">Voltar ao Lobby</a>
+    </div>
+</div>
+{% endblock %}
