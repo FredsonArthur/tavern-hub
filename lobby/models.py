@@ -15,6 +15,8 @@ class Mesa(models.Model):
 # Entidade 2: Personagem (Atributos do jogador)
 class Personagem(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    # ADICIONADO: Relacionamento com a Mesa para o Requisito 3
+    mesa = models.ForeignKey(Mesa, on_delete=models.SET_NULL, null=True, blank=True, related_name="personagens")
     nome = models.CharField(max_length=100)
     raca = models.CharField(max_length=50)
     classe = models.CharField(max_length=50)
@@ -25,20 +27,17 @@ class Personagem(models.Model):
     def __str__(self):
         return f"{self.nome} - Nível {self.nivel}"
 
-# Entidade 3: Rolagem (Agora vinculada a Personagem e Mesa para o Log)
+# Entidade 3: Rolagem (Vinculada a Personagem e Mesa para o Log)
 class Rolagem(models.Model):
-    # Relacionamos a rolagem a um personagem e a uma mesa específica
     personagem = models.ForeignKey(Personagem, on_delete=models.CASCADE, null=True, blank=True)
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, null=True, blank=True)
     
-    # Campos base para o registro dos dados
     jogador_nome = models.CharField(max_length=100, default="Aventureiro")
     tipo_dado = models.CharField(max_length=10, default="D20")
     resultado = models.IntegerField()
     data_hora = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        # Mostra o nome do personagem se existir, senão usa o nome padrão
         nome = self.personagem.nome if self.personagem else self.jogador_nome
         return f"{nome} tirou {self.resultado} no {self.tipo_dado}"
 

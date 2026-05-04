@@ -4,8 +4,10 @@ from .models import Personagem, Mesa
 class PersonagemForm(forms.ModelForm):
     class Meta:
         model = Personagem
-        fields = ['nome', 'raca', 'classe', 'nivel', 'vida_atual', 'historia']
+        # Adicionado 'mesa' aos campos para permitir a associação entre as entidades[cite: 3, 6]
+        fields = ['mesa', 'nome', 'raca', 'classe', 'nivel', 'vida_atual', 'historia']
         widgets = {
+            'mesa': forms.Select(attrs={'class': 'form-select border-primary'}), # Widget de seleção
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
             'raca': forms.TextInput(attrs={'class': 'form-control'}),
             'classe': forms.TextInput(attrs={'class': 'form-control'}),

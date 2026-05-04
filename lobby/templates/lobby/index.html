@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>TavernHub - Lobby</title>
-    <!-- Adicionei o Bootstrap para os formulários de personagens funcionarem -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding-bottom: 50px; }
@@ -12,7 +11,11 @@
         .dice-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
         button.dice-btn { background: #8b0000; color: white; border: none; padding: 10px; font-size: 1rem; cursor: pointer; border-radius: 5px; transition: 0.3s; }
         button.dice-btn:hover { background: #ff0000; transform: scale(1.05); }
-        #playerName { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; width: 250px; text-align: center; font-size: 1rem; }
+        /* Estilização do seletor de personagens */
+        .player-setup select, .player-setup input { 
+            padding: 10px; border-radius: 5px; border: 1px solid #444; 
+            background: #222; color: white; width: 300px; text-align: center; font-size: 1rem; 
+        }
         .log-container { margin-top: 40px; max-width: 600px; margin-left: auto; margin-right: auto; background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .log-container h3 { border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; color: #8b0000; }
         .log-lista { max-height: 300px; overflow-y: auto; }
@@ -28,7 +31,6 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'dashboard' %}">🎲 TavernHub</a>
             <div class="navbar-nav ms-auto">
-                <!-- Links de navegação para as Entidades 1 e 2 -->
                 <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">Minhas Mesas</a>
                 <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">Meus Personagens</a>
             </div>
@@ -36,9 +38,18 @@
     </nav>
 
     {% block content %}
-    <!-- CONTEÚDO PADRÃO DO LOBBY (SÓ APARECE NA HOME) -->
-    <div class="player-setup">
-        <input type="text" id="playerName" placeholder="Nome do seu Personagem" maxlength="20">
+    <div class="player-setup d-flex justify-content-center">
+        {% if user.is_authenticated %}
+            <!-- Seletor dinâmico que carrega os personagens do banco de dados -->
+            <select id="personagemSelect" class="form-select border-danger">
+                <option value="">Selecione seu Personagem</option>
+                {% for p in personagens %}
+                    <option value="{{ p.id }}">{{ p.nome }} ({{ p.classe }})</option>
+                {% endfor %}
+            </select>
+        {% else %}
+            <input type="text" id="playerName" placeholder="Nome do seu Personagem" maxlength="20">
+        {% endif %}
     </div>
 
     <div class="dice-container">
@@ -87,8 +98,19 @@
 
         function rollDice(faces) {
             const resultDiv = document.getElementById('result');
-            const nomeInput = document.getElementById('playerName');
-            const nomeValue = nomeInput.value.trim() || "Aventureiro";
+            const selectPersonagem = document.getElementById('personagemSelect');
+            const inputNome = document.getElementById('playerName');
+            
+            // Lógica para capturar ID do personagem ou nome manual[cite: 6]
+            const personagemId = selectPersonagem ? selectPersonagem.value : null;
+            let nomeExibicao = "Aventureiro";
+
+            if (selectPersonagem && selectPersonagem.selectedIndex > 0) {
+                nomeExibicao = selectPersonagem.options[selectPersonagem.selectedIndex].text.split(' (')[0];
+            } else if (inputNome && inputNome.value.trim() !== "") {
+                nomeExibicao = inputNome.value.trim();
+            }
+
             resultDiv.innerText = "...";
             setTimeout(() => {
                 const roll = Math.floor(Math.random() * faces) + 1;
@@ -100,7 +122,12 @@
                 fetch('/salvar-rolagem/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "resultado": roll, "jogador": nomeValue, "tipo_dado": "D" + faces })
+                    body: JSON.stringify({ 
+                        "resultado": roll, 
+                        "jogador": nomeExibicao, 
+                        "tipo_dado": "D" + faces,
+                        "personagem_id": personagemId // Envia o ID para o vínculo real no Django[cite: 6]
+                    })
                 })
                 .then(response => response.json())
                 .then(data => { atualizarLog(); })
