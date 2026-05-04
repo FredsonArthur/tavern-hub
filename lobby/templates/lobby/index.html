@@ -24,11 +24,13 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="{% url 'dashboard' %}">🎲 TavernHub</a>
-            <div>
-                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-danger">Meus Personagens</a>
+            <div class="navbar-nav ms-auto">
+                <!-- Links de navegação para as Entidades 1 e 2 -->
+                <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">Minhas Mesas</a>
+                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">Meus Personagens</a>
             </div>
         </div>
     </nav>

@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from .models import Rolagem, Personagem, Mesa
-from .forms import PersonagemForm
+from .forms import PersonagemForm, MesaForm
 
 # --- VIEWS DE NAVEGAÇÃO ---
 
@@ -13,17 +13,39 @@ def dashboard(request):
     """Renderiza a página principal do Lobby."""
     return render(request, 'lobby/index.html')
 
+# --- CRUD DE MESA (Entidade 1) ---
+
+@login_required
+def lista_mesas(request):
+    """Lista as mesas onde o usuário logado é o mestre."""
+    mesas = Mesa.objects.filter(mestre=request.user)
+    return render(request, 'lobby/lista_mesas.html', {'mesas': mesas})
+
+@login_required
+def criar_mesa(request):
+    """Cria uma nova mesa vinculada ao mestre logado."""
+    if request.method == 'POST':
+        form = MesaForm(request.POST)
+        if form.is_valid():
+            mesa = form.save(commit=False)
+            mesa.mestre = request.user
+            mesa.save()
+            return redirect('lista_mesas')
+    else:
+        form = MesaForm()
+    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Nova Mesa'})
+
 # --- CRUD DE PERSONAGEM (Entidade 2) ---
 
 @login_required
 def lista_personagens(request):
-    """Lista todos os personagens do usuário logado (Read)."""
+    """Lista todos os personagens do usuário logado (Read)[cite: 20]."""
     personagens = Personagem.objects.filter(usuario=request.user)
     return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
 
 @login_required
 def criar_personagem(request):
-    """Cria um novo personagem vinculado ao usuário (Create)."""
+    """Cria um novo personagem vinculado ao usuário (Create)[cite: 20]."""
     if request.method == 'POST':
         form = PersonagemForm(request.POST)
         if form.is_valid():
@@ -37,7 +59,7 @@ def criar_personagem(request):
 
 @login_required
 def editar_personagem(request, pk):
-    """Edita um personagem existente (Update)."""
+    """Edita um personagem existente (Update)[cite: 20]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         form = PersonagemForm(request.POST, instance=personagem)
@@ -50,7 +72,7 @@ def editar_personagem(request, pk):
 
 @login_required
 def excluir_personagem(request, pk):
-    """Remove um personagem (Delete)."""
+    """Remove um personagem (Delete)[cite: 20]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         personagem.delete()
@@ -61,7 +83,7 @@ def excluir_personagem(request, pk):
 
 @csrf_exempt
 def salvar_rolagem(request):
-    """Recebe o resultado e salva no banco."""
+    """Recebe o resultado e salva no banco[cite: 20]."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -90,7 +112,7 @@ def salvar_rolagem(request):
     return JsonResponse({'status': 'metodo_nao_permitido'}, status=405)
 
 def listar_rolagens(request):
-    """Retorna as últimas 10 rolagens em formato JSON."""
+    """Retorna as últimas 10 rolagens em formato JSON[cite: 20]."""
     rolagens = Rolagem.objects.all().order_by('-data_hora')[:10]
     dados = []
     for r in rolagens:
