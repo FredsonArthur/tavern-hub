@@ -10,11 +10,10 @@ from .forms import PersonagemForm, MesaForm
 # --- VIEWS DE NAVEGAÇÃO ---
 
 def dashboard(request):
-    """Renderiza a página principal com a lista de personagens para o seletor (Item 1)."""
+    """Renderiza a página principal do Lobby com personagens disponíveis."""
     personagens = []
     if request.user.is_authenticated:
         personagens = Personagem.objects.filter(usuario=request.user)
-    
     return render(request, 'lobby/index.html', {'personagens': personagens})
 
 # --- CRUD DE MESA (Entidade 1) ---
@@ -27,7 +26,7 @@ def lista_mesas(request):
 
 @login_required
 def criar_mesa(request):
-    """Cria uma nova mesa vinculada ao mestre logado[cite: 6]."""
+    """Cria uma nova mesa vinculada ao mestre logado[cite: 7]."""
     if request.method == 'POST':
         form = MesaForm(request.POST)
         if form.is_valid():
@@ -43,13 +42,13 @@ def criar_mesa(request):
 
 @login_required
 def lista_personagens(request):
-    """Lista todos os personagens do usuário logado[cite: 6]."""
+    """Lista todos os personagens do usuário logado[cite: 7]."""
     personagens = Personagem.objects.filter(usuario=request.user)
     return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
 
 @login_required
 def criar_personagem(request):
-    """Cria um novo personagem associado ao usuário (Item 3 via Form)[cite: 3, 6]."""
+    """Cria um novo personagem vinculado ao usuário e à mesa."""
     if request.method == 'POST':
         form = PersonagemForm(request.POST)
         if form.is_valid():
@@ -58,13 +57,12 @@ def criar_personagem(request):
             personagem.save()
             return redirect('lista_personagens')
     else:
-        # O PersonagemForm já deve conter o campo 'mesa' para a associação
         form = PersonagemForm()
     return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Novo Personagem'})
 
 @login_required
 def editar_personagem(request, pk):
-    """Edita um personagem existente e sua associação com mesas[cite: 3, 6]."""
+    """Edita um personagem existente[cite: 7]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         form = PersonagemForm(request.POST, instance=personagem)
@@ -77,35 +75,34 @@ def editar_personagem(request, pk):
 
 @login_required
 def excluir_personagem(request, pk):
-    """Remove um personagem[cite: 6]."""
+    """Remove um personagem[cite: 7]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         personagem.delete()
         return redirect('lista_personagens')
     return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
 
-# --- LÓGICA DE ROLAGENS (API) ---
+# --- LÓGICA DE ROLAGENS (Entidade 3 - API & CRUD) ---
 
 @csrf_exempt
 def salvar_rolagem(request):
-    """Salva a rolagem vinculando-a à entidade Personagem (Item 1)[cite: 3, 6]."""
+    """Recebe o resultado e salva vinculando ao Personagem (Create)[cite: 3, 7]."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             resultado_valor = data.get('resultado')
             tipo_dado_rolado = data.get('tipo_dado', 'D20')
-            personagem_id = data.get('personagem_id') # Recebido do select no frontend[cite: 6]
+            personagem_id = data.get('personagem_id')
             
             if resultado_valor is None:
                 return JsonResponse({'status': 'erro', 'message': 'Resultado vazio'}, status=400)
 
-            # Busca a instância para criar a Chave Estrangeira real
             personagem_instancia = None
             if personagem_id:
                 personagem_instancia = Personagem.objects.filter(id=personagem_id).first()
 
             nova_rolagem = Rolagem.objects.create(
-                personagem=personagem_instancia, # Vínculo técnico (Item 1)[cite: 3]
+                personagem=personagem_instancia,
                 jogador_nome=data.get('jogador', 'Aventureiro'),
                 tipo_dado=tipo_dado_rolado,
                 resultado=int(resultado_valor)
@@ -122,12 +119,11 @@ def salvar_rolagem(request):
     return JsonResponse({'status': 'metodo_nao_permitido'}, status=405)
 
 def listar_rolagens(request):
-    """Retorna rolagens com o nome atualizado via relacionamento[cite: 6]."""
+    """Retorna as últimas 10 rolagens (Read)[cite: 7]."""
     rolagens = Rolagem.objects.all().order_by('-data_hora')[:10]
     dados = []
     for r in rolagens:
         horario_local = timezone.localtime(r.data_hora)
-        # Prioriza o nome do objeto Personagem vinculado[cite: 6]
         nome_exibicao = r.personagem.nome if r.personagem else r.jogador_nome
         
         dados.append({
@@ -138,3 +134,11 @@ def listar_rolagens(request):
         })
     
     return JsonResponse({'rolagens': dados})
+
+@login_required
+def limpar_log(request):
+    """Remove todas as rolagens do log (Delete) - Fecha o CRUD de 3 entidades."""
+    if request.method == 'POST':
+        Rolagem.objects.all().delete()
+        return JsonResponse({'status': 'sucesso', 'message': 'Log limpo com sucesso'})
+    return JsonResponse({'status': 'metodo_nao_permitido'}, status=405)
