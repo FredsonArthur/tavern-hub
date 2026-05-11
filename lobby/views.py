@@ -4,11 +4,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count, Max # Importação para Agregações
-from .models import Rolagem, Personagem, Mesa
+from django.contrib import messages  # REQUISITO: Feedback Visual[cite: 5]
+from django.db.models import Avg, Count, Max
+from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm
 
-# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Data Visualization / Aggregation) ---
+# --- REQUISITO: PAINEL DE ESTATÍSTICAS ---
 
 @login_required
 def painel_estatisticas(request):
@@ -28,9 +29,9 @@ def rollback_rolagem(request, pk):
     """Permite corrigir um valor salvando a versão anterior para auditoria[cite: 3, 6]."""
     rolagem = get_object_or_404(Rolagem, pk=pk)
     
-    # Segurança: Apenas o mestre da mesa ou superusuário pode editar[cite: 3, 6]
     if rolagem.mesa and rolagem.mesa.mestre != request.user and not request.user.is_superuser:
-        return JsonResponse({'status': 'erro', 'message': 'Apenas o mestre pode editar'}, status=403)
+        messages.error(request, "Apenas o mestre pode realizar correções nesta mesa.")[cite: 5]
+        return redirect('dashboard')
 
     if request.method == 'POST':
         novo_valor = request.POST.get('novo_resultado')
@@ -40,11 +41,12 @@ def rollback_rolagem(request, pk):
             rolagem.editado = True
             rolagem.motivo_edicao = request.POST.get('motivo', 'Correção de erro')
             rolagem.save()
+            messages.success(request, f"Rolagem de {rolagem.jogador_nome} corrigida com sucesso!")[cite: 5]
             return redirect('dashboard')
             
     return render(request, 'lobby/form_rollback.html', {'rolagem': rolagem})
 
-# --- CRUD DE MESA (Entidade 1 - Protegida) ---
+# --- CRUD DE MESA (Protegida) ---
 
 @login_required
 def lista_mesas(request):
@@ -59,28 +61,28 @@ def criar_mesa(request):
             mesa = form.save(commit=False)
             mesa.mestre = request.user 
             mesa.save()
+            messages.success(request, f"Mesa '{mesa.titulo}' criada! Convide seus jogadores.")[cite: 5]
             return redirect('lista_mesas')
     else:
         form = MesaForm()
     return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Nova Mesa'})
 
-# --- CRUD DE PERSONAGEM (Entidade 2 - Com Soft Delete) ---
+# --- CRUD DE PERSONAGEM (Com Soft Delete e Feedback) ---
 
 @login_required
 def lista_personagens(request):
-    """Lista personagens ativos (Refinamento do Read)[cite: 3, 6]."""
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
     return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
 
 @login_required
 def criar_personagem(request):
-    """Cria um novo personagem vinculado ao usuário logado (Restaurada)[cite: 3, 4, 6]."""
     if request.method == 'POST':
         form = PersonagemForm(request.POST)
         if form.is_valid():
             personagem = form.save(commit=False)
             personagem.usuario = request.user
             personagem.save()
+            messages.success(request, f"O herói {personagem.nome} foi registrado com sucesso!")[cite: 5]
             return redirect('lista_personagens')
     else:
         form = PersonagemForm()
@@ -88,12 +90,12 @@ def criar_personagem(request):
 
 @login_required
 def editar_personagem(request, pk):
-    """Edita um personagem existente (Restaurada)[cite: 3, 4, 6]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         form = PersonagemForm(request.POST, instance=personagem)
         if form.is_valid():
             form.save()
+            messages.info(request, f"Ficha de {personagem.nome} atualizada.")[cite: 5]
             return redirect('lista_personagens')
     else:
         form = PersonagemForm(instance=personagem)
@@ -106,10 +108,28 @@ def excluir_personagem(request, pk):
     if request.method == 'POST':
         personagem.ativo = False 
         personagem.save()
+        messages.warning(request, f"{personagem.nome} foi arquivado e removido da lista ativa.")[cite: 5]
         return redirect('lista_personagens')
     return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
 
-# --- LÓGICA DE ROLAGENS (Entidade 3 - API) ---
+# --- LÓGICA DE INVENTÁRIO (Relacionamento Many-to-Many) ---
+
+@login_required
+def gerenciar_inventario(request, pk):
+    """View para associar itens a um personagem."""
+    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
+    todos_itens = Item.objects.all()
+    
+    if request.method == 'POST':
+        item_id = request.POST.get('item_id')
+        item = get_object_or_404(Item, pk=item_id)
+        personagem.itens.add(item)  # Adiciona ao relacionamento M2M[cite: 3]
+        messages.success(request, f"{item.nome} adicionado ao inventário de {personagem.nome}!")[cite: 5]
+        return redirect('lista_personagens')
+        
+    return render(request, 'lobby/inventario.html', {'personagem': personagem, 'itens': todos_itens})
+
+# --- LÓGICA DE ROLAGENS (API) ---
 
 @csrf_exempt
 def salvar_rolagem(request):
@@ -119,7 +139,7 @@ def salvar_rolagem(request):
             personagem_id = data.get('personagem_id')
             personagem = Personagem.objects.filter(id=personagem_id, ativo=True).first() if personagem_id else None
 
-            nova_rolagem = Rolagem.objects.create(
+            Rolagem.objects.create(
                 personagem=personagem,
                 mesa=personagem.mesa if personagem else None,
                 jogador_nome=data.get('jogador', 'Aventureiro'),
@@ -132,7 +152,6 @@ def salvar_rolagem(request):
     return JsonResponse({'status': 'erro'}, status=405)
 
 def listar_rolagens(request):
-    """API com filtros dinâmicos e suporte a Rollback[cite: 3, 6]."""
     tipo_filtro = request.GET.get('tipo')
     rolagens = Rolagem.objects.all().order_by('-data_hora')
     
@@ -155,6 +174,7 @@ def listar_rolagens(request):
 def limpar_log(request):
     if request.user.is_staff: 
         Rolagem.objects.all().delete()
+        messages.error(request, "O log de rolagens foi completamente limpo pelo administrador.")[cite: 5]
         return JsonResponse({'status': 'sucesso'})
     return JsonResponse({'status': 'erro', 'message': 'Sem permissão'}, status=403)
 

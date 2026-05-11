@@ -6,11 +6,9 @@ urlpatterns = [
     path('', views.dashboard, name='dashboard'),
 
     # --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
-    # Nova rota para visualizar a inteligência de dados da mesa
     path('estatisticas/', views.painel_estatisticas, name='painel_estatisticas'),
 
     # --- REQUISITO: SISTEMA DE ROLLBACK (Controle de Versão) ---
-    # Rota para editar uma rolagem específica mantendo o histórico[cite: 3, 5]
     path('rolagem/rollback/<int:pk>/', views.rollback_rolagem, name='rollback_rolagem'),
 
     # --- Rotas do Sistema de Rolagem (API / Entidade 3) ---
@@ -27,4 +25,8 @@ urlpatterns = [
     path('personagens/novo/', views.criar_personagem, name='criar_personagem'),
     path('personagens/editar/<int:pk>/', views.editar_personagem, name='editar_personagem'),
     path('personagens/excluir/<int:pk>/', views.excluir_personagem, name='excluir_personagem'),
+
+    # --- NOVO REQUISITO: GESTÃO DE INVENTÁRIO (Many-to-Many) ---
+    # Rota para gerenciar os itens de um personagem específico
+    path('personagem/<int:pk>/inventario/', views.gerenciar_inventario, name='gerenciar_inventario'),
 ]
