@@ -24,9 +24,9 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 - [x] Log de Atividades com **Internacionalização (Brasília/UTC-3)**.
 
 ### Fase 2: O Coração do RPG - CRUD & Entidades (Concluída ✅)
-- [x] **Gestão de Mesas (Entidade 1):** CRUD para criação e listagem de mesas.
-- [x] **Gestão de Personagens (Entidade 2):** CRUD completo (Criar, Consultar, Editar e Excluir).
-- [x] **Sistema de Rolagens (Entidade 3):** Registro persistente com função de limpeza de log (Delete).
+- [x] **Gestão de Mesas:** CRUD para criação e listagem de mesas de jogo.
+- [x] **Gestão de Personagens:** CRUD completo (Criar, Consultar, Editar e Excluir).
+- [x] **Sistema de Rolagens:** Registro persistente com função de limpeza de log.
 - [x] **Integração de Entidades:** Vínculo real entre Personagem -> Mesa e Rolagem -> Personagem.
 
 ### Fase 3: Lógica Avançada & Auditoria (Concluída ✅)
@@ -37,22 +37,18 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 ### Fase 4: Inteligência de Dados & Segurança (Concluída ✅)
 - [x] **Painel de Estatísticas (Aggregations):** Uso de `Avg`, `Count` e `Max` para processar médias e ranking diretamente no banco.
 - [x] **Sistema de Rollback (Versionamento):** Edição auditável de rolagens preservando o `resultado_anterior`.
-- [x] **Mesa Protegida (Permissões):** Restrição de acesso. Apenas o Mestre possui permissão para Rollbacks e gestão crítica.
+- [x] **Mesa Protegida (Permissões):** Acesso restrito. Apenas o Mestre possui permissão para Rollbacks e gestão crítica.
 
-### Fase 5: Expansão de Inventário & UX (Concluída ✅)
-- [x] **Gestão de Inventário (Many-to-Many):** Nova entidade `Item` que permite personagens possuírem múltiplos equipamentos.
-- [x] **Inteligência de Sinais Avançada:** Detecção automática de "Maré de Azar" (3 falhas seguidas) e alerta de "Riqueza".
-- [x] **Feedback Visual (Django Messages):** Implementação de alertas dinâmicos de sucesso, erro e avisos na interface (UX).
-- [x] **Interface de Inventário:** Novo dashboard para equipar e visualizar itens valiosos.
-
-### Próximos Passos 🚧
-- [ ] Sincronização de rolagens via WebSockets (Django Channels).
-- [ ] Sistema de Iniciativa (Tracker) ordenável.
-- [ ] Integração de notas rápidas exportáveis para o Obsidian.
+### Fase 5: Expansão de Inventário, UX & Estabilidade (Concluída ✅)
+- [x] **Gestão de Inventário (Many-to-Many):** Entidade `Item` que permite personagens possuírem múltiplos equipamentos.
+- [x] **Sinais de Inteligência:** Detecção automática de "Maré de Azar" (3 falhas seguidas) e alertas de "Riqueza".
+- [x] **Feedback Visual (Django Messages):** Alertas dinâmicos de sucesso, erro e avisos integrados à interface.
+- [x] **Navegação Consolidada:** Sistema de herança de templates e links dinâmicos para inventário no dashboard.
+- [x] **Suíte de Testes:** Validação automatizada de segurança, integridade e fluxos principais.
 
 ---
 
-## 🚀 Como Executar o Projeto Localmente (Linux/VS Code)
+## 🚀 Como Executar o Projeto Localmente
 
 1. **Clonar o repositório:**
    ```bash

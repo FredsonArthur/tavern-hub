@@ -1,19 +1,19 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages  # REQUISITO: Feedback Visual[cite: 5]
+from django.contrib import messages
 from django.db.models import Avg, Count, Max
 from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm
 
-# --- REQUISITO: PAINEL DE ESTATÍSTICAS ---
+# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
 
 @login_required
 def painel_estatisticas(request):
-    """Gera inteligência de dados processada diretamente no Banco de Dados[cite: 3, 6]."""
+    """Gera inteligência de dados processada diretamente no Banco de Dados."""
     stats = {
         'total_rolagens': Rolagem.objects.count(),
         'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
@@ -22,16 +22,16 @@ def painel_estatisticas(request):
     }
     return render(request, 'lobby/estatisticas.html', {'stats': stats})
 
-# --- REQUISITO: SISTEMA DE ROLLBACK (Controle de Versão) ---
+# --- REQUISITO: SISTEMA DE ROLLBACK (Segurança e Controle de Versão) ---
 
 @login_required
 def rollback_rolagem(request, pk):
-    """Permite corrigir um valor salvando a versão anterior para auditoria[cite: 3, 6]."""
+    """Permite corrigir um valor salvando a versão anterior para auditoria."""
     rolagem = get_object_or_404(Rolagem, pk=pk)
     
     if rolagem.mesa and rolagem.mesa.mestre != request.user and not request.user.is_superuser:
-        messages.error(request, "Apenas o mestre pode realizar correções nesta mesa.")[cite: 5]
-        return redirect('dashboard')
+        messages.error(request, "Apenas o mestre pode realizar correções nesta mesa.")
+        return HttpResponseForbidden("Apenas o mestre pode realizar correções nesta mesa.")
 
     if request.method == 'POST':
         novo_valor = request.POST.get('novo_resultado')
@@ -41,7 +41,7 @@ def rollback_rolagem(request, pk):
             rolagem.editado = True
             rolagem.motivo_edicao = request.POST.get('motivo', 'Correção de erro')
             rolagem.save()
-            messages.success(request, f"Rolagem de {rolagem.jogador_nome} corrigida com sucesso!")[cite: 5]
+            messages.success(request, f"Rolagem de {rolagem.jogador_nome} corrigida com sucesso!")
             return redirect('dashboard')
             
     return render(request, 'lobby/form_rollback.html', {'rolagem': rolagem})
@@ -61,13 +61,13 @@ def criar_mesa(request):
             mesa = form.save(commit=False)
             mesa.mestre = request.user 
             mesa.save()
-            messages.success(request, f"Mesa '{mesa.titulo}' criada! Convide seus jogadores.")[cite: 5]
+            messages.success(request, f"Mesa '{mesa.titulo}' criada!")
             return redirect('lista_mesas')
     else:
         form = MesaForm()
     return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Nova Mesa'})
 
-# --- CRUD DE PERSONAGEM (Com Soft Delete e Feedback) ---
+# --- CRUD DE PERSONAGEM (Com Soft Delete) ---
 
 @login_required
 def lista_personagens(request):
@@ -82,7 +82,7 @@ def criar_personagem(request):
             personagem = form.save(commit=False)
             personagem.usuario = request.user
             personagem.save()
-            messages.success(request, f"O herói {personagem.nome} foi registrado com sucesso!")[cite: 5]
+            messages.success(request, f"O herói {personagem.nome} foi registrado!")
             return redirect('lista_personagens')
     else:
         form = PersonagemForm()
@@ -95,7 +95,7 @@ def editar_personagem(request, pk):
         form = PersonagemForm(request.POST, instance=personagem)
         if form.is_valid():
             form.save()
-            messages.info(request, f"Ficha de {personagem.nome} atualizada.")[cite: 5]
+            messages.info(request, f"Ficha de {personagem.nome} atualizada.")
             return redirect('lista_personagens')
     else:
         form = PersonagemForm(instance=personagem)
@@ -103,31 +103,33 @@ def editar_personagem(request, pk):
 
 @login_required
 def excluir_personagem(request, pk):
-    """Exclusão lógica (Soft Delete)[cite: 3, 6]."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         personagem.ativo = False 
         personagem.save()
-        messages.warning(request, f"{personagem.nome} foi arquivado e removido da lista ativa.")[cite: 5]
+        messages.warning(request, f"{personagem.nome} foi arquivado.")
         return redirect('lista_personagens')
-    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
+    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personageme})
 
-# --- LÓGICA DE INVENTÁRIO (Relacionamento Many-to-Many) ---
+# --- NOVO: GESTÃO DE INVENTÁRIO (Many-to-Many) ---
 
 @login_required
 def gerenciar_inventario(request, pk):
-    """View para associar itens a um personagem."""
+    """Lógica para adicionar itens ao inventário de um personagem específico."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
-    todos_itens = Item.objects.all()
-    
+    itens_disponiveis = Item.objects.all()
+
     if request.method == 'POST':
         item_id = request.POST.get('item_id')
-        item = get_object_or_404(Item, pk=item_id)
-        personagem.itens.add(item)  # Adiciona ao relacionamento M2M[cite: 3]
-        messages.success(request, f"{item.nome} adicionado ao inventário de {personagem.nome}!")[cite: 5]
-        return redirect('lista_personagens')
-        
-    return render(request, 'lobby/inventario.html', {'personagem': personagem, 'itens': todos_itens})
+        item = get_object_or_404(Item, id=item_id)
+        personagem.itens.add(item) # Relacionamento Many-to-Many
+        messages.success(request, f"{item.nome} adicionado ao inventário de {personagem.nome}!")
+        return redirect('gerenciar_inventario', pk=personagem.pk)
+
+    return render(request, 'lobby/inventario.html', {
+        'personagem': personagem,
+        'itens': itens_disponiveis
+    })
 
 # --- LÓGICA DE ROLAGENS (API) ---
 
@@ -174,9 +176,9 @@ def listar_rolagens(request):
 def limpar_log(request):
     if request.user.is_staff: 
         Rolagem.objects.all().delete()
-        messages.error(request, "O log de rolagens foi completamente limpo pelo administrador.")[cite: 5]
+        messages.error(request, "O log de rolagens foi limpo.")
         return JsonResponse({'status': 'sucesso'})
-    return JsonResponse({'status': 'erro', 'message': 'Sem permissão'}, status=403)
+    return JsonResponse({'status': 'erro'}, status=403)
 
 def dashboard(request):
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else []

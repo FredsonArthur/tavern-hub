@@ -26,8 +26,7 @@
         .badge-edit { font-size: 0.6rem; background: #444; color: #ffcc00; margin-left: 5px; padding: 2px 5px; border-radius: 3px; }
         .btn-rollback { color: #666; text-decoration: none; font-size: 0.8rem; margin-left: 10px; }
         .btn-rollback:hover { color: #ffcc00; }
-        /* Estilo para alertas do Django Messages[cite: 5] */
-        .messages-container { max-width: 600px; margin: 0 auto; }
+        .messages-container { max-width: 600px; margin: 20px auto; }
     </style>
 </head>
 <body>
@@ -36,13 +35,12 @@
             <a class="navbar-brand" href="{% url 'dashboard' %}">🎲 TavernHub</a>
             <div class="navbar-nav ms-auto">
                 <a href="{% url 'painel_estatisticas' %}" class="btn btn-outline-warning me-2">📊 Estatísticas</a>
-                <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">Minhas Mesas</a>
-                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">Meus Personagens</a>
+                <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">🏰 Minhas Mesas</a>
+                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">👥 Meus Personagens</a>
             </div>
         </div>
     </nav>
 
-    <!-- REQUISITO IMPLEMENTADO: Bloco de Feedback Visual (Django Messages)[cite: 5, 6] -->
     {% if messages %}
     <div class="messages-container">
         {% for message in messages %}
@@ -54,15 +52,21 @@
     </div>
     {% endif %}
 
+    {% block content %}
     <div class="container">
         <div class="player-setup d-flex justify-content-center mb-4">
             {% if user.is_authenticated %}
-                <select id="personagemSelect" class="form-select border-danger">
-                    <option value="">Selecione seu Personagem</option>
-                    {% for p in personagens %}
-                        <option value="{{ p.id }}">{{ p.nome }} ({{ p.classe }})</option>
-                    {% endfor %}
-                </select>
+                <div>
+                    <select id="personagemSelect" class="form-select border-danger">
+                        <option value="">Selecione seu Personagem</option>
+                        {% for p in personagens %}
+                            <option value="{{ p.id }}">{{ p.nome }} ({{ p.classe }})</option>
+                        {% endfor %}
+                    </select>
+                    <div id="inventory-shortcut" class="mt-2" style="display: none;">
+                        <a id="btn-inventory" href="#" class="btn btn-sm btn-warning">🎒 Abrir Inventário de <span id="name-placeholder"></span></a>
+                    </div>
+                </div>
             {% else %}
                 <input type="text" id="playerName" placeholder="Nome do seu Personagem" maxlength="20">
             {% endif %}
@@ -81,11 +85,6 @@
             </div>
         </div>
 
-        <!-- NOVO: Atalho rápido para gerenciar inventário se um personagem estiver selecionado -->
-        <div id="inventory-shortcut" class="mt-3" style="display: none;">
-            <a id="btn-inventory" href="#" class="btn btn-sm btn-outline-secondary">🎒 Gerenciar Inventário</a>
-        </div>
-
         <div class="log-container">
             <div class="d-flex justify-content-between align-items-center border-bottom mb-2">
                 <h3 class="border-0">📜 Log de Combate</h3>
@@ -98,22 +97,26 @@
                 </div>
             </div>
             <div id="log-lista" class="log-lista">
-                <!-- Rolagens via API -->
-            </div>
+                </div>
         </div>
     </div>
+    {% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Monitora seleção de personagem para mostrar botão de inventário[cite: 3]
+        // Lógica para mostrar/esconder atalho de inventário
         const personagemSelect = document.getElementById('personagemSelect');
         if (personagemSelect) {
             personagemSelect.addEventListener('change', function() {
                 const shortcut = document.getElementById('inventory-shortcut');
                 const btn = document.getElementById('btn-inventory');
+                const nameSpan = document.getElementById('name-placeholder');
+                
                 if (this.value) {
+                    const nome = this.options[this.selectedIndex].text.split(' (')[0];
                     shortcut.style.display = 'block';
+                    nameSpan.innerText = nome;
                     btn.href = `/personagem/${this.value}/inventario/`;
                 } else {
                     shortcut.style.display = 'none';
