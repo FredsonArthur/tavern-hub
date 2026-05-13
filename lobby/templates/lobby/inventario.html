@@ -1,75 +1,89 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Inventário - {{ personagem.nome }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding-top: 50px; }
-        .inventory-card { background: #252525; border: 1px solid #444; border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .item-list { list-style: none; padding: 0; }
-        .item-entry { background: #333; margin-bottom: 10px; padding: 10px; border-radius: 5px; border-left: 4px solid #8b0000; display: flex; justify-content: space-between; align-items: center; }
-        .item-info { font-size: 0.9rem; color: #aaa; }
-        .gold-text { color: #ffcc00; font-weight: bold; }
-        .empty-msg { font-style: italic; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Bloco de Feedback Visual (Django Messages)[cite: 5, 6] -->
-        {% if messages %}
+{% extends 'lobby/index.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    {% if messages %}
+        <div class="messages-container">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
-        {% endif %}
+        </div>
+    {% endif %}
 
-        <div class="inventory-card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>🎒 Inventário de {{ personagem.nome }}</h2>
-                <a href="{% url 'dashboard' %}" class="btn btn-outline-light btn-sm">Voltar ao Lobby</a>
+    <div class="inventory-card bg-dark text-white p-4 rounded border border-secondary shadow-lg">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-danger pb-3">
+            <h2 class="mb-0">🎒 Inventário de <span class="text-warning">{{ personagem.nome }}</span></h2>
+            <a href="{% url 'lista_personagens' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-chevron-left"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card bg-secondary bg-opacity-10 border-warning mb-5">
+            <div class="card-body">
+                <h5 class="card-title text-warning mb-3">Encontrar novo item na taverna</h5>
+                <form method="POST" class="row g-3">
+                    {% csrf_token %}
+                    <div class="col-md-9">
+                        <select name="item_id" id="item_id" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="">Selecione um item da biblioteca...</option>
+                            {% for item in itens %}
+                                <option value="{{ item.id }}">{{ item.nome }} - {{ item.raridade }} ({{ item.peso }}kg)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-plus-circle"></i> Equipar Item
+                        </button>
+                    </div>
+                </form>
             </div>
+        </div>
 
-            <!-- Adicionar Novo Item (Lógica Many-to-Many) -->
-            <form method="POST" class="row g-3 mb-5 border-bottom pb-4">
-                {% csrf_token %}
-                <div class="col-md-8">
-                    <label for="item_id" class="form-label">Encontrar novo item na taverna:</label>
-                    <select name="item_id" id="item_id" class="form-select bg-dark text-white border-secondary" required>
-                        <option value="">Selecione um item disponível...</option>
-                        {% for item in itens %}
-                            <option value="{{ item.id }}">{{ item.nome }} - {{ item.valor }} PO ({{ item.peso }}kg)</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-danger w-100">Adicionar ao Inventário</button>
-                </div>
-            </form>
-
-            <!-- Lista de Itens Atuais[cite: 3, 6] -->
-            <h4>Itens Equipados</h4>
-            <ul class="item-list mt-3">
-                {% for item in personagem.itens.all %}
-                    <li class="item-entry">
-                        <div>
-                            <strong>{{ item.nome }}</strong><br>
-                            <span class="item-info">{{ item.descricao }}</span>
-                        </div>
-                        <div class="text-end">
-                            <span class="gold-text">{{ item.valor }} PO</span><br>
-                            <small class="text-secondary">{{ item.peso }} kg</small>
-                        </div>
-                    </li>
-                {% empty %}
-                    <li class="empty-msg text-center py-4">Este personagem ainda não possui itens no inventário.</li>
-                {% endfor %}
-            </ul>
+        <h4 class="mb-3 text-danger"><i class="fas fa-shield-alt"></i> Equipamentos Atuais</h4>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+                <thead class="table-danger">
+                    <tr>
+                        <th>Item</th>
+                        <th>Descrição</th>
+                        <th class="text-center">Peso</th>
+                        <th class="text-center">Raridade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in personagem.itens.all %}
+                    <tr>
+                        <td><strong class="text-warning">{{ item.nome }}</strong></td>
+                        <td class="text-muted small">{{ item.descricao|default:"Sem descrição." }}</td>
+                        <td class="text-center">{{ item.peso }} kg</td>
+                        <td class="text-center">
+                            <span class="badge {% if item.raridade == 'Lendário' %}bg-danger{% elif item.raridade == 'Raro' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                {{ item.raridade }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted italic">
+                            <i class="fas fa-ghost fa-2x mb-2"></i><br>
+                            Este aventureiro ainda não possui itens no inventário.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<style>
+    .inventory-card { min-height: 600px; }
+    .table { border-radius: 8px; overflow: hidden; }
+    .table-hover tbody tr:hover { background-color: rgba(139, 0, 0, 0.2) !important; }
+    .messages-container { max-width: 800px; margin: 0 auto 20px auto; }
+</style>
+{% endblock %}

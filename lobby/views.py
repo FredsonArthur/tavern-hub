@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Avg, Count, Max
 from .models import Rolagem, Personagem, Mesa, Item
-from .forms import PersonagemForm, MesaForm
+from .forms import PersonagemForm, MesaForm, ItemForm # Importação do ItemForm adicionada
 
 # --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
 
@@ -109,9 +109,28 @@ def excluir_personagem(request, pk):
         personagem.save()
         messages.warning(request, f"{personagem.nome} foi arquivado.")
         return redirect('lista_personagens')
-    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personageme})
+    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
 
-# --- NOVO: GESTÃO DE INVENTÁRIO (Many-to-Many) ---
+# --- GESTÃO DE INVENTÁRIO & ITENS (Many-to-Many) ---
+
+@login_required
+def lista_itens(request):
+    """Exibe todos os itens globais que podem ser adicionados aos inventários."""
+    itens = Item.objects.all()
+    return render(request, 'lobby/lista_itens.html', {'itens': itens})
+
+@login_required
+def criar_item(request):
+    """Permite forjar novos itens para a biblioteca do TavernHub."""
+    if request.method == 'POST':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Item lendário adicionado à biblioteca!")
+            return redirect('lista_itens')
+    else:
+        form = ItemForm()
+    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Forjar Novo Item'})
 
 @login_required
 def gerenciar_inventario(request, pk):

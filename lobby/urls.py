@@ -26,7 +26,11 @@ urlpatterns = [
     path('personagens/editar/<int:pk>/', views.editar_personagem, name='editar_personagem'),
     path('personagens/excluir/<int:pk>/', views.excluir_personagem, name='excluir_personagem'),
 
-    # --- NOVO REQUISITO: GESTÃO DE INVENTÁRIO (Many-to-Many) ---
+    # --- NOVO REQUISITO: GESTÃO DE INVENTÁRIO & ITENS (Many-to-Many) ---
     # Rota para gerenciar os itens de um personagem específico
     path('personagem/<int:pk>/inventario/', views.gerenciar_inventario, name='gerenciar_inventario'),
+    
+    # Rotas para o CRUD global de Itens (Biblioteca de Itens)
+    path('itens/', views.lista_itens, name='lista_itens'),
+    path('itens/novo/', views.criar_item, name='criar_item'),
 ]

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>TavernHub - Lobby</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; padding-bottom: 50px; }
         .dice-container { margin-top: 20px; padding: 20px; border: 2px solid #444; display: inline-block; border-radius: 10px; background: #252525; }
@@ -35,8 +36,9 @@
             <a class="navbar-brand" href="{% url 'dashboard' %}">🎲 TavernHub</a>
             <div class="navbar-nav ms-auto">
                 <a href="{% url 'painel_estatisticas' %}" class="btn btn-outline-warning me-2">📊 Estatísticas</a>
-                <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">🏰 Minhas Mesas</a>
-                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">👥 Meus Personagens</a>
+                <a href="{% url 'lista_itens' %}" class="btn btn-outline-light me-2">📦 Itens</a>
+                <a href="{% url 'lista_mesas' %}" class="btn btn-outline-danger me-2">🏰 Mesas</a>
+                <a href="{% url 'lista_personagens' %}" class="btn btn-outline-primary">👥 Personagens</a>
             </div>
         </div>
     </nav>
@@ -64,7 +66,9 @@
                         {% endfor %}
                     </select>
                     <div id="inventory-shortcut" class="mt-2" style="display: none;">
-                        <a id="btn-inventory" href="#" class="btn btn-sm btn-warning">🎒 Abrir Inventário de <span id="name-placeholder"></span></a>
+                        <a id="btn-inventory" href="#" class="btn btn-sm btn-warning">
+                            <i class="fas fa-suitcase"></i> Abrir Inventário de <span id="name-placeholder"></span>
+                        </a>
                     </div>
                 </div>
             {% else %}
@@ -96,8 +100,7 @@
                     </ul>
                 </div>
             </div>
-            <div id="log-lista" class="log-lista">
-                </div>
+            <div id="log-lista" class="log-lista"></div>
         </div>
     </div>
     {% endblock %}
@@ -117,6 +120,7 @@
                     const nome = this.options[this.selectedIndex].text.split(' (')[0];
                     shortcut.style.display = 'block';
                     nameSpan.innerText = nome;
+                    // A rota agora aponta corretamente para a view de inventário
                     btn.href = `/personagem/${this.value}/inventario/`;
                 } else {
                     shortcut.style.display = 'none';

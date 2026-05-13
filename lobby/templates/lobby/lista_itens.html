@@ -1,0 +1,61 @@
+{% extends 'lobby/index.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white">📦 Biblioteca de Itens</h2>
+        <a href="{% url 'criar_item' %}" class="btn btn-warning">
+            <i class="fas fa-hammer"></i> Forjar Novo Item
+        </a>
+    </div>
+
+    <div class="row">
+        {% for item in itens %}
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark text-white border-secondary h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title text-warning mb-0">{{ item.nome }}</h5>
+                        <span class="badge {% if item.raridade == 'Lendário' %}bg-danger{% elif item.raridade == 'Raro' %}bg-primary{% else %}bg-secondary{% endif %}">
+                            {{ item.raridade }}
+                        </span>
+                    </div>
+                    
+                    <p class="card-text flex-grow-1 mt-2 text-light" style="font-size: 0.9rem; opacity: 0.8;">
+                        {{ item.descricao|default:"Sem descrição disponível." }}
+                    </p>
+                    
+                    <div class="border-top border-secondary pt-2 mt-3">
+                        <small class="text-muted">
+                            <strong>Peso:</strong> {{ item.peso }} kg
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="text-muted">
+                <i class="fas fa-box-open fa-3x mb-3"></i>
+                <p>O arsenal da taverna está vazio. Comece forjando um item lendário!</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">Voltar ao Lobby</a>
+    </div>
+</div>
+
+<style>
+    /* Ajuste para garantir que os cards tenham a mesma altura */
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        border-color: #ffcc00 !important;
+    }
+</style>
+{% endblock %}

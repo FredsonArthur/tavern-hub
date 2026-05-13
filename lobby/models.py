@@ -4,20 +4,36 @@ from django.contrib.auth.models import User
 
 # --- NOVA ENTIDADE: Item (Para Sistema de Inventário Many-to-Many) ---
 class Item(models.Model):
-    """Representa itens que podem ser equipados ou carregados por personagens[cite: 3]."""
+    """Representa itens que podem ser equipados ou carregados por personagens."""
+    
+    # Opções de raridade para consistência nos formulários e templates
+    RARIDADE_CHOICES = [
+        ('Comum', 'Comum'),
+        ('Incomum', 'Incomum'),
+        ('Raro', 'Raro'),
+        ('Épico', 'Épico'),
+        ('Lendário', 'Lendário'),
+    ]
+
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True)
     peso = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
-    valor = models.IntegerField(default=0, help_text="Valor em moedas de ouro")
+    
+    # SUBSTITUÍDO: 'valor' por 'raridade' para alinhar com o ItemForm e inventario.html
+    raridade = models.CharField(
+        max_length=20, 
+        choices=RARIDADE_CHOICES, 
+        default='Comum'
+    )
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} ({self.raridade})"
 
 # --- Entidade 1: Mesa ---
 class Mesa(models.Model):
     titulo = models.CharField(max_length=100)
     descricao = models.TextField()
-    # REQUISITO: "Mesa Protegida" - Apenas o mestre gerencia a mesa[cite: 3]
+    # REQUISITO: "Mesa Protegida" - Apenas o mestre gerencia a mesa
     mestre = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mesas_gerenciadas')
     data_criacao = models.DateTimeField(default=timezone.now)
     privada = models.BooleanField(default=False)
@@ -36,10 +52,10 @@ class Personagem(models.Model):
     vida_atual = models.IntegerField(default=10)
     historia = models.TextField(blank=True)
     
-    # IMPLEMENTADO: Soft Delete[cite: 3]
+    # IMPLEMENTADO: Soft Delete
     ativo = models.BooleanField(default=True)
 
-    # IMPLEMENTADO: Relacionamento Many-to-Many para Inventário[cite: 3]
+    # IMPLEMENTADO: Relacionamento Many-to-Many para Inventário
     itens = models.ManyToManyField(Item, blank=True, related_name="possuidores")
 
     def __str__(self):
@@ -56,7 +72,7 @@ class Rolagem(models.Model):
     resultado = models.IntegerField()
     data_hora = models.DateTimeField(default=timezone.now)
 
-    # REQUISITO: "Rollback" - Auditoria de dados[cite: 3]
+    # REQUISITO: "Rollback" - Auditoria de dados
     editado = models.BooleanField(default=False)
     resultado_anterior = models.IntegerField(null=True, blank=True)
     motivo_edicao = models.CharField(max_length=255, null=True, blank=True)
