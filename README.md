@@ -40,6 +40,7 @@ tavern-hub/
 │   ├── tests.py            # Suíte de blindagem e validação automatizada de software
 │   └── urls.py             # Rotas internas dinâmicas do aplicativo
 └── manage.py               # Utilitário de gerenciamento e execução de comandos
+```
 
 ## 🎯 Funcionalidades & Progresso do Projeto
 
