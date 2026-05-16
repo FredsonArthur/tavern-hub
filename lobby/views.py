@@ -10,11 +10,11 @@ from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm, ItemForm
 
 
-# --- REQUISITO: PAINEL DE ESTAT�STICAS (Aggregation) ---
+# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
 
 @login_required
 def painel_estatisticas(request):
-    """Gera intelig�ncia de dados processada diretamente no Banco de Dados."""
+    """Gera inteligência de dados processada diretamente no Banco de Dados."""
     stats = {
         'total_rolagens': Rolagem.objects.count(),
         'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
@@ -24,27 +24,27 @@ def painel_estatisticas(request):
     return render(request, 'lobby/estatisticas.html', {'stats': stats})
 
 
-# --- REQUISITO: SISTEMA DE ROLLBACK (Seguran�a e Controle de Vers�o) ---
+# --- REQUISITO: SISTEMA DE ROLLBACK (Segurança e Controle de Versão) ---
 
 @login_required
 def rollback_rolagem(request, pk):
-    """Permite corrigir um valor salvando a vers�o anterior para auditoria."""
+    """Permite corrigir um valor salvando a versão anterior para auditoria."""
     rolagem = get_object_or_404(Rolagem, pk=pk)
 
-    # REGRA DE NEG�CIO: Apenas o mestre da mesa vinculada � rolagem possui a permiss�o de altera��o
+    # REGRA DE NEGÓCIO: Apenas o mestre da mesa vinculada à rolagem possui a permissão de alteração
     if rolagem.mesa and rolagem.mesa.mestre != request.user:
-        return HttpResponseForbidden("Apenas o Mestre desta mesa pode realizar altera��es de auditoria.")
+        return HttpResponseForbidden("Apenas o Mestre desta mesa pode realizar alterações de auditoria.")
 
     if request.method == 'POST':
         novo_valor = request.POST.get('novo_resultado')
         motivo = request.POST.get('motivo')
 
         if novo_valor:
-            # Sincroniza o hist�rico antes de alterar
+            # Sincroniza o histórico antes de alterar
             rolagem.resultado_anterior = rolagem.resultado
             rolagem.resultado = int(novo_valor)
             rolagem.editado = True
-            rolagem.motivo_edicao = motivo if motivo else "Corre��o Manual"
+            rolagem.motivo_edicao = motivo if motivo else "Correção Manual"
             rolagem.save()
 
             messages.success(request, f"Rolagem de {rolagem.jogador_nome} auditada com sucesso!")
@@ -56,15 +56,15 @@ def rollback_rolagem(request, pk):
 # --- Rotas Principais (Dashboard e APIs) ---
 
 def dashboard(request):
-    """Renderiza a mesa de jogo e o painel de rolagens din�micas."""
-    # Filtra apenas os personagens ativos do usu�rio logado (se houver)
+    """Renderiza a mesa de jogo e o painel de rolagens dinâmicas."""
+    # Filtra apenas os personagens ativos do usuário logado (se houver)
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else None
     return render(request, 'lobby/index.html', {'personagens': personajes})
 
 
 @csrf_exempt
 def salvar_rolagem(request):
-    """API endpoint para salvar as rolagens ass�ncronas calculadas no front-end."""
+    """API endpoint para salvar as rolagens assíncronas calculadas no front-end."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -91,10 +91,10 @@ def salvar_rolagem(request):
 
 
 def listar_rolagens(request):
-    """Lista as �ltimas 10 rolagens usando select_related para evitar queries N+1 ao buscar o Personagem."""
+    """Lista as últimas 10 rolagens usando select_related para evitar queries N+1 ao buscar o Personagem."""
     tipo_filtro = request.GET.get('tipo')
 
-    # OTIMIZA��O: Traz os dados do Personagem no mesmo JOIN inicial
+    # OTIMIZAÇÃO: Traz os dados do Personagem no mesmo JOIN inicial
     rolagens = Rolagem.objects.all().select_related('personagem').order_by('-data_hora')
 
     if tipo_filtro:
@@ -115,26 +115,26 @@ def listar_rolagens(request):
 
 @login_required
 def limpar_log(request):
-    """Remove todo o hist�rico de rolagens (Apenas Staff/Admins)."""
+    """Remove todo o histórico de rolagens (Apenas Staff/Admins)."""
     if request.user.is_staff:
         Rolagem.objects.all().delete()
         messages.error(request, "O log de rolagens foi limpo.")
         return JsonResponse({'status': 'sucesso'})
-    return JsonResponse({'status': 'erro', 'message': 'N�o autorizado'}, status=403)
+    return JsonResponse({'status': 'erro', 'message': 'Não autorizado'}, status=403)
 
 
-# --- CRUD: Gest�o de Mesas (Protegida) ---
+# --- CRUD: Gestão de Mesas (Protegida) ---
 
 @login_required
 def lista_mesas(request):
-    """Exibe as mesas gerenciadas pelo usu�rio logado."""
+    """Exibe as mesas gerenciadas pelo usuário logado."""
     mesas = Mesa.objects.filter(mestre=request.user)
     return render(request, 'lobby/lista_mesas.html', {'mesas': mesas})
 
 
 @login_required
 def criar_mesa(request):
-    """Cria uma nova mesa de RPG associando o usu�rio logado como Mestre."""
+    """Cria uma nova mesa de RPG associando o usuário logado como Mestre."""
     if request.method == 'POST':
         form = MesaForm(request.POST)
         if form.is_valid():
@@ -147,18 +147,18 @@ def criar_mesa(request):
     return render(request, 'lobby/form_mesa.html', {'form': form, 'titulo': 'Fundar Nova Mesa'})
 
 
-# --- CRUD: Gest�o de Personagens (Soft Delete ativo) ---
+# --- CRUD: Gestão de Personagens (Soft Delete ativo) ---
 
 @login_required
 def lista_personagens(request):
-    """Exibe apenas her�is ativos (Soft Delete ativo)."""
+    """Exibe apenas heróis ativos (Soft Delete ativo)."""
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
     return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
 
 
 @login_required
 def criar_personagem(request):
-    """Instancia um novo her�i na taverna."""
+    """Instancia um novo herói na taverna."""
     if request.method == 'POST':
         form = PersonagemForm(request.POST)
         if form.is_valid():
@@ -168,7 +168,7 @@ def criar_personagem(request):
             return redirect('lista_personagens')
     else:
         form = PersonagemForm()
-    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Novo Her�i'})
+    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Novo Herói'})
 
 
 @login_required
@@ -187,7 +187,7 @@ def editar_personagem(request, pk):
 
 @login_required
 def excluir_personagem(request, pk):
-    """Executa a exclus�o l�gica (Soft Delete) do personagem."""
+    """Executa a exclusão lógica (Soft Delete) do personagem."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user, ativo=True)
     if request.method == 'POST':
         personagem.ativo = False
@@ -196,7 +196,7 @@ def excluir_personagem(request, pk):
     return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
 
 
-# --- SISTEMA DE INVENT�RIO (Many-to-Many) ---
+# --- SISTEMA DE INVENTÁRIO (Many-to-Many) ---
 
 @login_required
 def lista_itens(request):
@@ -220,7 +220,7 @@ def criar_item(request):
 
 @login_required
 def gerenciar_inventario(request, pk):
-    """Vincula ou desvincula itens no invent�rio Many-to-Many do Personagem."""
+    """Vincula ou desvincula itens no inventário Many-to-Many do Personagem."""
     personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user, ativo=True)
 
     if request.method == "POST":
@@ -228,7 +228,7 @@ def gerenciar_inventario(request, pk):
         if item_id:
             item = get_object_or_404(Item, pk=item_id)
             personagem.itens.add(item)
-            # Django Signals cuidar� do alerta autom�tico de itens raros!
+            # Django Signals cuidará do alerta automático de itens raros!
             return redirect('gerenciar_inventario', pk=personagem.id)
 
     itens_disponiveis = Item.objects.exclude(id__in=personagem.itens.all())
