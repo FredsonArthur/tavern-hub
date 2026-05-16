@@ -25,9 +25,9 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 ### Fase 2: O Coração do RPG - CRUD & Entidades (Concluída ✅)
 - [x] **Gestão de Mesas:** CRUD para criação e listagem de mesas de jogo.
 - [x] **Gestão de Personagens:** CRUD completo (Criar, Consultar, Editar e Excluir).
-- [x] **Integração de Entidades:** Vínculo real entre Personagem -> Mesa e Rolagem -> Personagem.
+- [x] **Integração de Entidades:** Vinculação dinâmica de personagens a mesas ativas.
 
-### Fase 3: Lógica Avançada & Auditoria (Concluída ✅)
+### Fase 3: Arquitetura Assíncrona & Lógica de Jogo (Concluída ✅)
 - [x] **Soft Delete de Personagens:** Implementação de exclusão lógica para manutenção de integridade.
 - [x] **Paradigma Publish-Subscribe (Signals):** Monitoramento automático de críticos e logs de auditoria no terminal.
 - [x] **API com Filtros Dinâmicos:** Refinamento da leitura permitindo filtragem por tipo de dado via URL.
@@ -42,13 +42,14 @@ O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de
 - [x] **Biblioteca Global de Itens:** Interface dedicada para forjar e listar itens disponíveis no mundo.
 - [x] **Sinais de Inteligência:** Detecção automática de "Maré de Azar" (3 falhas seguidas) e alertas de "Riqueza".
 - [x] **Feedback Visual (Django Messages):** Alertas dinâmicos de sucesso, erro e avisos integrados à interface.
-- [x] **Navegação Consolidada:** Sistema de herança de templates e links dinâmicos para inventário no dashboard.
+- [x] **Navegação Consolidada:** Sistema de herança de templates e links dinâmicos para inventário no painel de personagens.
+- [x] **Suite de Testes Automatizados:** Implementação de testes de Unidade, Integração, M2M Signals, Proteção de Views e Regressão de Soft Delete com 100% de aprovação.
 
 ---
 
-## 🚀 Como Executar o Projeto Localmente
+## 🧪 Como Executar os Testes
 
-1. **Clonar o repositório:**
-   ```bash
-   git clone <link-do-seu-repo>
-   cd tavern-hub
+Para garantir que nenhuma alteração quebre as regras de negócio core da taverna, execute a suite de testes integrada:
+
+```bash
+python manage.py test
