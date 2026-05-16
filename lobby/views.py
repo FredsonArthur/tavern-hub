@@ -7,13 +7,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Avg, Count, Max
 from .models import Rolagem, Personagem, Mesa, Item
-from .forms import PersonagemForm, MesaForm, ItemForm # Importação do ItemForm adicionada
+from .forms import PersonagemForm, MesaForm, ItemForm
 
-# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
+
+# --- REQUISITO: PAINEL DE ESTAT�STICAS (Aggregation) ---
 
 @login_required
 def painel_estatisticas(request):
-    """Gera inteligência de dados processada diretamente no Banco de Dados."""
+    """Gera intelig�ncia de dados processada diretamente no Banco de Dados."""
     stats = {
         'total_rolagens': Rolagem.objects.count(),
         'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
@@ -22,147 +23,63 @@ def painel_estatisticas(request):
     }
     return render(request, 'lobby/estatisticas.html', {'stats': stats})
 
-# --- REQUISITO: SISTEMA DE ROLLBACK (Segurança e Controle de Versão) ---
+
+# --- REQUISITO: SISTEMA DE ROLLBACK (Seguran�a e Controle de Vers�o) ---
 
 @login_required
 def rollback_rolagem(request, pk):
-    """Permite corrigir um valor salvando a versão anterior para auditoria."""
+    """Permite corrigir um valor salvando a vers�o anterior para auditoria."""
     rolagem = get_object_or_404(Rolagem, pk=pk)
-    
-    if rolagem.mesa and rolagem.mesa.mestre != request.user and not request.user.is_superuser:
-        messages.error(request, "Apenas o mestre pode realizar correções nesta mesa.")
-        return HttpResponseForbidden("Apenas o mestre pode realizar correções nesta mesa.")
+
+    # REGRA DE NEG�CIO: Apenas o mestre da mesa vinculada � rolagem possui a permiss�o de altera��o
+    if rolagem.mesa and rolagem.mesa.mestre != request.user:
+        return HttpResponseForbidden("Apenas o Mestre desta mesa pode realizar altera��es de auditoria.")
 
     if request.method == 'POST':
         novo_valor = request.POST.get('novo_resultado')
+        motivo = request.POST.get('motivo')
+
         if novo_valor:
+            # Sincroniza o hist�rico antes de alterar
             rolagem.resultado_anterior = rolagem.resultado
             rolagem.resultado = int(novo_valor)
             rolagem.editado = True
-            rolagem.motivo_edicao = request.POST.get('motivo', 'Correção de erro')
+            rolagem.motivo_edicao = motivo if motivo else "Corre��o Manual"
             rolagem.save()
-            messages.success(request, f"Rolagem de {rolagem.jogador_nome} corrigida com sucesso!")
+
+            messages.success(request, f"Rolagem de {rolagem.jogador_nome} auditada com sucesso!")
             return redirect('dashboard')
-            
+
     return render(request, 'lobby/form_rollback.html', {'rolagem': rolagem})
 
-# --- CRUD DE MESA (Protegida) ---
 
-@login_required
-def lista_mesas(request):
-    mesas = Mesa.objects.filter(mestre=request.user)
-    return render(request, 'lobby/lista_mesas.html', {'mesas': mesas})
+# --- Rotas Principais (Dashboard e APIs) ---
 
-@login_required
-def criar_mesa(request):
-    if request.method == 'POST':
-        form = MesaForm(request.POST)
-        if form.is_valid():
-            mesa = form.save(commit=False)
-            mesa.mestre = request.user 
-            mesa.save()
-            messages.success(request, f"Mesa '{mesa.titulo}' criada!")
-            return redirect('lista_mesas')
-    else:
-        form = MesaForm()
-    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Nova Mesa'})
+def dashboard(request):
+    """Renderiza a mesa de jogo e o painel de rolagens din�micas."""
+    # Filtra apenas os personagens ativos do usu�rio logado (se houver)
+    personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else None
+    return render(request, 'lobby/index.html', {'personagens': personajes})
 
-# --- CRUD DE PERSONAGEM (Com Soft Delete) ---
-
-@login_required
-def lista_personagens(request):
-    personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
-    return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
-
-@login_required
-def criar_personagem(request):
-    if request.method == 'POST':
-        form = PersonagemForm(request.POST)
-        if form.is_valid():
-            personagem = form.save(commit=False)
-            personagem.usuario = request.user
-            personagem.save()
-            messages.success(request, f"O herói {personagem.nome} foi registrado!")
-            return redirect('lista_personagens')
-    else:
-        form = PersonagemForm()
-    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Novo Personagem'})
-
-@login_required
-def editar_personagem(request, pk):
-    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
-    if request.method == 'POST':
-        form = PersonagemForm(request.POST, instance=personagem)
-        if form.is_valid():
-            form.save()
-            messages.info(request, f"Ficha de {personagem.nome} atualizada.")
-            return redirect('lista_personagens')
-    else:
-        form = PersonagemForm(instance=personagem)
-    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Editar Personagem'})
-
-@login_required
-def excluir_personagem(request, pk):
-    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
-    if request.method == 'POST':
-        personagem.ativo = False 
-        personagem.save()
-        messages.warning(request, f"{personagem.nome} foi arquivado.")
-        return redirect('lista_personagens')
-    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
-
-# --- GESTÃO DE INVENTÁRIO & ITENS (Many-to-Many) ---
-
-@login_required
-def lista_itens(request):
-    """Exibe todos os itens globais que podem ser adicionados aos inventários."""
-    itens = Item.objects.all()
-    return render(request, 'lobby/lista_itens.html', {'itens': itens})
-
-@login_required
-def criar_item(request):
-    """Permite forjar novos itens para a biblioteca do TavernHub."""
-    if request.method == 'POST':
-        form = ItemForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Item lendário adicionado à biblioteca!")
-            return redirect('lista_itens')
-    else:
-        form = ItemForm()
-    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Forjar Novo Item'})
-
-@login_required
-def gerenciar_inventario(request, pk):
-    """Lógica para adicionar itens ao inventário de um personagem específico."""
-    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user)
-    itens_disponiveis = Item.objects.all()
-
-    if request.method == 'POST':
-        item_id = request.POST.get('item_id')
-        item = get_object_or_404(Item, id=item_id)
-        personagem.itens.add(item) # Relacionamento Many-to-Many
-        messages.success(request, f"{item.nome} adicionado ao inventário de {personagem.nome}!")
-        return redirect('gerenciar_inventario', pk=personagem.pk)
-
-    return render(request, 'lobby/inventario.html', {
-        'personagem': personagem,
-        'itens': itens_disponiveis
-    })
-
-# --- LÓGICA DE ROLAGENS (API) ---
 
 @csrf_exempt
 def salvar_rolagem(request):
+    """API endpoint para salvar as rolagens ass�ncronas calculadas no front-end."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             personagem_id = data.get('personagem_id')
-            personagem = Personagem.objects.filter(id=personagem_id, ativo=True).first() if personagem_id else None
+
+            personagem = None
+            mesa = None
+
+            if personagem_id and personagem_id != "None":
+                personagem = Personagem.objects.get(pk=personagem_id)
+                mesa = personagem.mesa
 
             Rolagem.objects.create(
                 personagem=personagem,
-                mesa=personagem.mesa if personagem else None,
+                mesa=mesa,
                 jogador_nome=data.get('jogador', 'Aventureiro'),
                 tipo_dado=data.get('tipo_dado', 'D20'),
                 resultado=int(data.get('resultado'))
@@ -172,13 +89,17 @@ def salvar_rolagem(request):
             return JsonResponse({'status': 'erro', 'message': str(e)}, status=400)
     return JsonResponse({'status': 'erro'}, status=405)
 
+
 def listar_rolagens(request):
+    """Lista as �ltimas 10 rolagens usando select_related para evitar queries N+1 ao buscar o Personagem."""
     tipo_filtro = request.GET.get('tipo')
-    rolagens = Rolagem.objects.all().order_by('-data_hora')
-    
+
+    # OTIMIZA��O: Traz os dados do Personagem no mesmo JOIN inicial
+    rolagens = Rolagem.objects.all().select_related('personagem').order_by('-data_hora')
+
     if tipo_filtro:
         rolagens = rolagens.filter(tipo_dado=tipo_filtro)
-    
+
     dados = []
     for r in rolagens[:10]:
         dados.append({
@@ -191,14 +112,127 @@ def listar_rolagens(request):
         })
     return JsonResponse({'rolagens': dados})
 
+
 @login_required
 def limpar_log(request):
-    if request.user.is_staff: 
+    """Remove todo o hist�rico de rolagens (Apenas Staff/Admins)."""
+    if request.user.is_staff:
         Rolagem.objects.all().delete()
         messages.error(request, "O log de rolagens foi limpo.")
         return JsonResponse({'status': 'sucesso'})
-    return JsonResponse({'status': 'erro'}, status=403)
+    return JsonResponse({'status': 'erro', 'message': 'N�o autorizado'}, status=403)
 
-def dashboard(request):
-    personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else []
-    return render(request, 'lobby/index.html', {'personagens': personagens})
+
+# --- CRUD: Gest�o de Mesas (Protegida) ---
+
+@login_required
+def lista_mesas(request):
+    """Exibe as mesas gerenciadas pelo usu�rio logado."""
+    mesas = Mesa.objects.filter(mestre=request.user)
+    return render(request, 'lobby/lista_mesas.html', {'mesas': mesas})
+
+
+@login_required
+def criar_mesa(request):
+    """Cria uma nova mesa de RPG associando o usu�rio logado como Mestre."""
+    if request.method == 'POST':
+        form = MesaForm(request.POST)
+        if form.is_valid():
+            mesa = form.save(commit=False)
+            mesa.mestre = request.user
+            mesa.save()
+            return redirect('lista_mesas')
+    else:
+        form = MesaForm()
+    return render(request, 'lobby/form_mesa.html', {'form': form, 'titulo': 'Fundar Nova Mesa'})
+
+
+# --- CRUD: Gest�o de Personagens (Soft Delete ativo) ---
+
+@login_required
+def lista_personagens(request):
+    """Exibe apenas her�is ativos (Soft Delete ativo)."""
+    personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
+    return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
+
+
+@login_required
+def criar_personagem(request):
+    """Instancia um novo her�i na taverna."""
+    if request.method == 'POST':
+        form = PersonagemForm(request.POST)
+        if form.is_valid():
+            personagem = form.save(commit=False)
+            personagem.usuario = request.user
+            personagem.save()
+            return redirect('lista_personagens')
+    else:
+        form = PersonagemForm()
+    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Novo Her�i'})
+
+
+@login_required
+def editar_personagem(request, pk):
+    """Modifica os atributos de uma ficha existente."""
+    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user, ativo=True)
+    if request.method == 'POST':
+        form = PersonagemForm(request.POST, instance=personagem)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_personagens')
+    else:
+        form = PersonagemForm(instance=personagem)
+    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': f'Editar {personagem.nome}'})
+
+
+@login_required
+def excluir_personagem(request, pk):
+    """Executa a exclus�o l�gica (Soft Delete) do personagem."""
+    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user, ativo=True)
+    if request.method == 'POST':
+        personagem.ativo = False
+        personagem.save()
+        return redirect('lista_personagens')
+    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
+
+
+# --- SISTEMA DE INVENT�RIO (Many-to-Many) ---
+
+@login_required
+def lista_itens(request):
+    """Exibe todos os itens registrados no banco global do arsenal."""
+    itens = Item.objects.all()
+    return render(request, 'lobby/lista_itens.html', {'itens': itens})
+
+
+@login_required
+def criar_item(request):
+    """Forja um novo equipamento no arsenal da taverna."""
+    if request.method == 'POST':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_itens')
+    else:
+        form = ItemForm()
+    return render(request, 'lobby/form_item.html', {'form': form})
+
+
+@login_required
+def gerenciar_inventario(request, pk):
+    """Vincula ou desvincula itens no invent�rio Many-to-Many do Personagem."""
+    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user, ativo=True)
+
+    if request.method == "POST":
+        item_id = request.POST.get('item_id')
+        if item_id:
+            item = get_object_or_404(Item, pk=item_id)
+            personagem.itens.add(item)
+            # Django Signals cuidar� do alerta autom�tico de itens raros!
+            return redirect('gerenciar_inventario', pk=personagem.id)
+
+    itens_disponiveis = Item.objects.exclude(id__in=personagem.itens.all())
+    return render(request, 'lobby/inventario.html', {
+        'personagem': personagem,
+        'itens_disponiveis': itens_disponiveis
+    })
