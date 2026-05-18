@@ -59,7 +59,7 @@ def dashboard(request):
     """Renderiza a mesa de jogo e o painel de rolagens dinâmicas."""
     # Filtra apenas os personagens ativos do usuário logado (se houver)
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else None
-    return render(request, 'lobby/index.html', {'personagens': personajes})
+    return render(request, 'lobby/index.html', {'personagens': personagens})
 
 
 @csrf_exempt

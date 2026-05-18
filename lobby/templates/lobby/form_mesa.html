@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏰 Criar Nova Mesa de RPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="background-color: #121212; color: #f8f9fa;">
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0" style="background-color: #2b2b2b; color: #f8f9fa;">
+                <div class="card-header text-center border-0" style="background-color: #1a1a1a; border-bottom: 2px solid #0d6efd !important;">
+                    <h3 class="mb-0 text-primary" style="font-family: 'Georgia', serif; letter-spacing: 1px; color: #38bdf8 !important;">
+                        🏰 Convocar Nova Mesa
+                    </h3>
+                    <small class="text-muted">Inicie uma nova campanha e prepare o lobby para receber os jogadores</small>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label fw-bold" style="color: #38bdf8;">
+                                Nome da Campanha / Mesa
+                            </label>
+                            <input type="text"
+                                   name="{{ form.nome.name }}"
+                                   id="{{ form.nome.id_for_label }}"
+                                   class="form-control bg-dark text-white border-secondary {% if form.nome.errors %}is-invalid{% endif %}"
+                                   placeholder="Ex: Crônicas de Ravenloft, O Despertar do Dragão..."
+                                   value="{{ form.nome.value|default_if_none:'' }}"
+                                   required>
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.nome.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.sistema.id_for_label }}" class="form-label fw-bold" style="color: #38bdf8;">
+                                Sistema de RPG
+                            </label>
+                            <input type="text"
+                                   name="{{ form.sistema.name }}"
+                                   id="{{ form.sistema.id_for_label }}"
+                                   class="form-control bg-dark text-white border-secondary {% if form.sistema.errors %}is-invalid{% endif %}"
+                                   placeholder="Ex: D&D 5e, Tormenta20, Ordem Paranormal..."
+                                   value="{{ form.sistema.value|default_if_none:'' }}"
+                                   required>
+                            {% if form.sistema.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.sistema.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% if form.descricao %}
+                        <div class="mb-4">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label fw-bold" style="color: #38bdf8;">
+                                Sinopse / Detalhes da Campanha
+                            </label>
+                            <textarea name="{{ form.descricao.name }}"
+                                      id="{{ form.descricao.id_for_label }}"
+                                      class="form-control bg-dark text-white border-secondary {% if form.descricao.errors %}is-invalid{% endif %}"
+                                      rows="3"
+                                      placeholder="Breve resumo sobre o cenário ou regras da mesa..."></textarea>
+                        </div>
+                        {% endif %}
+
+                        <hr class="border-secondary my-4">
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="/" class="btn btn-outline-light px-4">
+                                🔙 Voltar ao Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold px-5 text-white" style="background-color: #0284c7; border-color: #0284c7;">
+                                🎲 Erguer Mesa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        background-color: #1a1a1a !important;
+        color: #fff !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25) !important;
+    }
+</style>
+</body>
+</html>
