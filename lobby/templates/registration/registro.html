@@ -1,0 +1,70 @@
+{% extends 'lobby/index.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card bg-dark text-white border-warning p-4 shadow-lg">
+                <div class="text-center mb-4">
+                    <h2 style="color: #ffcc00;"><i class="fas fa-scroll"></i> Registrar Aventureiro</h2>
+                    <p class="text-muted small">Crie seu perfil para registrar heróis e entrar em mesas</p>
+                </div>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger small">
+                        Por favor, corrija os erros abaixo para criar sua conta.
+                    </div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3 text-start">
+                            <label class="form-label text-warning">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text text-muted" style="font-size: 0.75rem;">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small" style="font-size: 0.8rem;">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning fw-bold text-dark">Forjar Conta</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3 small">
+                    <p class="text-muted">Já possui cadastro? <a href="{% url 'login' %}" class="text-warning text-decoration-none">Faça login aqui</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input {
+        class: form-control;
+        background-color: #111 !important;
+        border: 1px solid #444 !important;
+        color: white !important;
+        display: block;
+        width: 100%;
+        padding: .375rem .75rem;
+        border-radius: .375rem;
+    }
+    input:focus {
+        border-color: #ffcc00 !important;
+        outline: none;
+        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.25);
+    }
+    /* Estilização para as listas de requisitos de senha do Django */
+    ul {
+        color: #aaa;
+        font-size: 0.75rem;
+        padding-left: 20px;
+    }
+</style>
+{% endblock %}

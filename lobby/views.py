@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Avg, Count, Max
+from django.contrib.auth import login  # Importado para logar o usuário automaticamente após o registro
+from django.contrib.auth.forms import UserCreationForm  # Formulário padrão de criação de usuário
 from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm, ItemForm
 
@@ -59,7 +61,7 @@ def dashboard(request):
     """Renderiza a mesa de jogo e o painel de rolagens dinâmicas."""
     # Filtra apenas os personagens ativos do usuário logado (se houver)
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True) if request.user.is_authenticated else None
-    return render(request, 'lobby/index.html', {'personagens': personagens})
+    return render(request, 'lobby/index.html', {'personagens': personajes})
 
 
 @csrf_exempt
@@ -75,7 +77,7 @@ def salvar_rolagem(request):
 
             if personagem_id and personagem_id != "None":
                 personagem = Personagem.objects.get(pk=personagem_id)
-                mesa = personagem.mesa
+                mesa = KeyError if not personagem else personagem.mesa
 
             Rolagem.objects.create(
                 personagem=personagem,
@@ -228,7 +230,6 @@ def gerenciar_inventario(request, pk):
         if item_id:
             item = get_object_or_404(Item, pk=item_id)
             personagem.itens.add(item)
-            # Django Signals cuidará do alerta automático de itens raros!
             return redirect('gerenciar_inventario', pk=personagem.id)
 
     itens_disponiveis = Item.objects.exclude(id__in=personagem.itens.all())
@@ -236,3 +237,19 @@ def gerenciar_inventario(request, pk):
         'personagem': personagem,
         'itens_disponiveis': itens_disponiveis
     })
+
+
+# --- AUTENTICAÇÃO: Criação de Contas ---
+
+def registro(request):
+    """Permite que novos aventureiros criem uma conta na taverna."""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # Faz o login do usuário automaticamente
+            messages.success(request, f"Bem-vindo à taverna, {user.username}!")
+            return redirect('dashboard')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/registro.html', {'form': form})

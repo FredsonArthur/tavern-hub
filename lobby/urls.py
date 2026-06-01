@@ -1,9 +1,13 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views  # Importa as views de autenticação nativas
 from . import views
 
 urlpatterns = [
-    # --- Rota Principal ---
+    # --- Rota Principal (Força o redirecionamento para o login caso não esteja autenticado) ---
     path('', views.dashboard, name='dashboard'),
+
+    # --- AUTENTICAÇÃO: Criação de Novas Contas ---
+    path('registro/', views.registro, name='registro'),
 
     # --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
     path('estatisticas/', views.painel_estatisticas, name='painel_estatisticas'),

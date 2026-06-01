@@ -16,9 +16,18 @@ Including another URLconf
 """
 # core/urls.py
 from django.contrib import admin
-from django.urls import path, include # Importe o 'include'
+from django.urls import path, include
+from django.contrib.auth import views as auth_views  # Views nativas de autenticação do Django
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('lobby.urls')), # Rota principal vai para o lobby
+    
+    # Define que a página inicial (raiz '/') chama diretamente a tela de login
+    path('', auth_views.LoginView.as_view(), name='login'),
+    
+    # Rotas padrão do Django para processar login, logout e troca de senha
+    path('accounts/', include('django.contrib.auth.urls')),
+    
+    # Rotas internas do app lobby (mesas, personagens, rolagens, etc.)
+    path('lobby/', include('lobby.urls')),
 ]
