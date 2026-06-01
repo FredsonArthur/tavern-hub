@@ -4,8 +4,10 @@ import os
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-(^ma1_napt#0zamw!2c7lx^0@3&bzj694byq5l7+$v%fgr57q_'
+
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 # Hosts permitidos
@@ -62,15 +64,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database[cite: 5]
+
+# --- REQUISITO (ii): Configuração do Banco de Dados PostgreSQL ---
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'tavern_db',          # Nome do banco de dados criado no psql
+        'USER': 'postgres',           # Usuário padrão do PostgreSQL
+        'PASSWORD': '1234567890',     # ⚠️ Altere para a senha do seu banco local!
+        'HOST': 'localhost',          # Localhost para desenvolvimento (no deploy usaremos o RDS/EC2)
+        'PORT': '5432',               # Porta padrão do Postgres
     }
 }
 
-# Password validation[cite: 5]
+
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -78,23 +86,20 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization[cite: 5]
+# Internationalization
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
-# Static files[cite: 5]
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- CORREÇÃO DO REDIRECIONAMENTO ---
-# Isso impede que o Django te jogue na Home quando você tenta acessar personagens
-LOGIN_URL = '/admin/login/'
-LOGIN_REDIRECT_URL = '/personagens/'
-LOGOUT_REDIRECT_URL = '/'
-# Configurações de Redirecionamento de Autenticação
+
+# --- CONFIGURAÇÕES DE REDIRECIONAMENTO DE AUTENTICAÇÃO ---
+LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
