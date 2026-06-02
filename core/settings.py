@@ -66,14 +66,16 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # --- REQUISITO (ii): Configuração do Banco de Dados PostgreSQL ---
+# Configurado dinamicamente para aceitar variáveis de ambiente no fluxo de CI/CD
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tavern_db',          # Nome do banco de dados criado no psql
-        'USER': 'postgres',           # Usuário padrão do PostgreSQL
-        'PASSWORD': '1234567890',     # ⚠️ Altere para a senha do seu banco local!
-        'HOST': 'localhost',          # Localhost para desenvolvimento (no deploy usaremos o RDS/EC2)
-        'PORT': '5432',               # Porta padrão do Postgres
+        'NAME': 'tavern_db',
+        'USER': 'postgres',
+        # Tenta ler a variável injetada pelo GitHub Actions; se não achar, usa a sua local '1234567890'
+        'PASSWORD': os.environ.get('DB_PASSWORD', '1234567890'), 
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': '5432',
     }
 }
 
@@ -109,7 +111,7 @@ LOGOUT_REDIRECT_URL = 'login'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'tavern_cache_table',  # Nome da tabela de cache que o Django criará no Postgres
+        'LOCATION': 'tavern_cache_table',  # Nome da tabela de cache criada no Postgres
         'TIMEOUT': 300,                     # Tempo padrão de armazenamento: 5 minutos (300 segundos)
     }
 }
