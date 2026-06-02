@@ -103,3 +103,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+
+# --- REQUISITO (viii): Configuração da Estratégia de Cache ---
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'tavern_cache_table',  # Nome da tabela de cache que o Django criará no Postgres
+        'TIMEOUT': 300,                     # Tempo padrão de armazenamento: 5 minutos (300 segundos)
+    }
+}

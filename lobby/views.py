@@ -8,21 +8,31 @@ from django.contrib import messages
 from django.db.models import Avg, Count, Max
 from django.contrib.auth import login  # Importado para logar o usuário automaticamente após o registro
 from django.contrib.auth.forms import UserCreationForm  # Formulário padrão de criação de usuário
+from django.core.cache import cache  # --- REQUISITO (viii): Módulo de Gerenciamento de Cache ---
 from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm, ItemForm
 
 
-# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation) ---
+# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation + Cache de Baixo Nível) ---
 
 @login_required
 def painel_estatisticas(request):
-    """Gera inteligência de dados processada diretamente no Banco de Dados."""
-    stats = {
-        'total_rolagens': Rolagem.objects.count(),
-        'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
-        'maior_valor': Rolagem.objects.aggregate(Max('resultado'))['resultado__max'] or 0,
-        'rank_jogadores': Rolagem.objects.values('jogador_nome').annotate(total=Count('id')).order_by('-total')[:5]
-    }
+    """Gera inteligência de dados processada com estratégia de cache em banco."""
+    # 1. Tenta recuperar os cálculos prontos da tabela de cache do PostgreSQL
+    stats = cache.get('painel_estatisticas_data')
+    
+    # 2. Se o cache expirou ou não existir, faz o processamento pesado e salva no cache
+    if not stats:
+        stats = {
+            'total_rolagens': Rolagem.objects.count(),
+            'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
+            'maior_valor': Rolagem.objects.aggregate(Max('resultado'))['resultado__max'] or 0,
+            # Convertido para lista para garantir a serialização correta na tabela de cache
+            'rank_jogadores': list(Rolagem.objects.values('jogador_nome').annotate(total=Count('id')).order_by('-total')[:5])
+        }
+        # Grava os resultados no cache definindo o timeout para 300 segundos (5 minutos)
+        cache.set('painel_estatisticas_data', stats, 300)
+
     return render(request, 'lobby/estatisticas.html', {'stats': stats})
 
 
@@ -48,6 +58,9 @@ def rollback_rolagem(request, pk):
             rolagem.editado = True
             rolagem.motivo_edicao = motivo if motivo else "Correção Manual"
             rolagem.save()
+
+            # Invalida o cache para que a alteração reflita imediatamente no painel
+            cache.delete('painel_estatisticas_data')
 
             messages.success(request, f"Rolagem de {rolagem.jogador_nome} auditada com sucesso!")
             return redirect('dashboard')
@@ -86,6 +99,10 @@ def salvar_rolagem(request):
                 tipo_dado=data.get('tipo_dado', 'D20'),
                 resultado=int(data.get('resultado'))
             )
+            
+            # Força a limpeza do cache de estatísticas a cada nova rolagem gerada
+            cache.delete('painel_estatisticas_data')
+            
             return JsonResponse({'status': 'sucesso'})
         except Exception as e:
             return JsonResponse({'status': 'erro', 'message': str(e)}, status=400)
@@ -120,6 +137,10 @@ def limpar_log(request):
     """Remove todo o histórico de rolagens (Apenas Staff/Admins)."""
     if request.user.is_staff:
         Rolagem.objects.all().delete()
+        
+        # Invalida o cache após limpar o log global
+        cache.delete('painel_estatisticas_data')
+        
         messages.error(request, "O log de rolagens foi limpo.")
         return JsonResponse({'status': 'sucesso'})
     return JsonResponse({'status': 'erro', 'message': 'Não autorizado'}, status=403)
@@ -195,7 +216,7 @@ def excluir_personagem(request, pk):
         personagem.ativo = False
         personagem.save()
         return redirect('lista_personagens')
-    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
+    return render(request, 'lobby/confirmar_exclusao.html', {'objeto': deletion_target})
 
 
 # --- SISTEMA DE INVENTÁRIO (Many-to-Many) ---
