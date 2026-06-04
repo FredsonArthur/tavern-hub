@@ -1,18 +1,18 @@
 {% extends 'lobby/index.html' %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 animate__animated animate__fadeIn">
     <div class="row justify-content-center">
         <div class="col-md-5">
             <div class="card bg-dark text-white border-warning p-4 shadow-lg">
                 <div class="text-center mb-4">
-                    <h2 style="color: #ffcc00;"><i class="fas fa-scroll"></i> Registrar Aventureiro</h2>
+                    <h2 style=\"color: #ffcc00;\"><i class="fas fa-scroll"></i> Registrar Aventureiro</h2>
                     <p class="text-muted small">Crie seu perfil para registrar heróis e entrar em mesas</p>
                 </div>
 
                 {% if form.errors %}
-                    <div class="alert alert-danger small">
-                        Por favor, corrija os erros abaixo para criar sua conta.
+                    <div class="alert alert-danger small py-2">
+                        <i class="fas fa-circle-exclamation"></i> Por favor, corrija os erros abaixo para criar sua conta.
                     </div>
                 {% endif %}
 
@@ -20,24 +20,24 @@
                     {% csrf_token %}
                     {% for field in form %}
                         <div class="mb-3 text-start">
-                            <label class="form-label text-warning">{{ field.label }}</label>
+                            <label class="form-label text-warning fw-bold small">{{ field.label }}</label>
                             {{ field }}
                             {% if field.help_text %}
-                                <div class="form-text text-muted" style="font-size: 0.75rem;">{{ field.help_text }}</div>
+                                <div class="form-text text-muted" style="font-size: 0.75rem; line-height: 1.2;">{{ field.help_text }}</div>
                             {% endif %}
                             {% for error in field.errors %}
-                                <div class="text-danger small" style="font-size: 0.8rem;">{{ error }}</div>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.8rem;"><i class="fas fa-circle-xmark"></i> {{ error }}</div>
                             {% endfor %}
                         </div>
                     {% endfor %}
                     
                     <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-warning fw-bold text-dark">Forjar Conta</button>
+                        <button type="submit" class="btn btn-warning fw-bold text-dark shadow-sm">Forjar Conta</button>
                     </div>
                 </form>
                 
                 <div class="text-center mt-3 small">
-                    <p class="text-muted">Já possui cadastro? <a href="{% url 'login' %}" class="text-warning text-decoration-none">Faça login aqui</a></p>
+                    <p class="text-muted">Já possui cadastro? <a href="{% url 'login' %}" class="text-warning text-decoration-none fw-bold">Faça login aqui</a></p>
                 </div>
             </div>
         </div>
@@ -45,26 +45,29 @@
 </div>
 
 <style>
-    input {
-        class: form-control;
-        background-color: #111 !important;
-        border: 1px solid #444 !important;
-        color: white !important;
+    /* Estilização corrigida para manter o input escuro e consistente */
+    input[type="text"], input[type="password"] {
+        background-color: #111111 !important;
+        border: 1px solid #444444 !important;
+        color: #ffffff !important;
         display: block;
         width: 100%;
         padding: .375rem .75rem;
         border-radius: .375rem;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     }
-    input:focus {
+    input[type="text"]:focus, input[type="password"]:focus {
         border-color: #ffcc00 !important;
         outline: none;
-        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.25);
+        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.25) !important;
     }
-    /* Estilização para as listas de requisitos de senha do Django */
-    ul {
+    /* Tratamento estético para as listas de validação de senha do Django */
+    ul.errorlist, .form-text ul {
+        padding-left: 1rem;
         color: #aaa;
         font-size: 0.75rem;
-        padding-left: 20px;
+        margin-top: 5px;
+        margin-bottom: 0;
     }
 </style>
 {% endblock %}
