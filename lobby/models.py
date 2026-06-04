@@ -2,11 +2,10 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 
-# --- NOVA ENTIDADE: Item (Para Sistema de Inventário Many-to-Many) ---
+# --- ENTIDADE: Item (Sistema de Inventário Many-to-Many) ---
 class Item(models.Model):
     """Representa itens que podem ser equipados ou carregados por personagens."""
     
-    # Opções de raridade para consistência nos formulários e templates
     RARIDADE_CHOICES = [
         ('Comum', 'Comum'),
         ('Incomum', 'Incomum'),
@@ -18,37 +17,39 @@ class Item(models.Model):
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True)
     peso = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
-    
-    # SUBSTITUÍDO: 'valor' por 'raridade' para alinhar com o ItemForm e inventario.html
     raridade = models.CharField(
         max_length=20, 
-        choices=RARIDADE_CHOICES, 
+        choices=RARIDADE_CHOICES, \
         default='Comum'
     )
+    # CORRIGIDO: Adicionado o campo ativo para suportar o Soft Delete e as queries da views.py
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.nome} ({self.raridade})"
+
 
 # --- Entidade 1: Mesa ---
 class Mesa(models.Model):
     titulo = models.CharField(max_length=100)
     descricao = models.TextField()
-    # REQUISITO: "Mesa Protegida" - Apenas o mestre gerencia a mesa
-    mestre = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mesas_gerenciadas')
+    mestre = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mesas_mestrada")
     data_criacao = models.DateTimeField(default=timezone.now)
-    privada = models.BooleanField(default=False)
 
     def __str__(self):
         return self.titulo
 
-# --- Entidade 2: Personagem (Com Soft Delete e Inventário) ---
+
+# --- Entidade 2: Personagem ---
 class Personagem(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    mesa = models.ForeignKey(Mesa, on_delete=models.SET_NULL, null=True, blank=True, related_name="personagens")
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="personagens")
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, related_name="personagens", null=True, blank=True)
+    
     nome = models.CharField(max_length=100)
     raca = models.CharField(max_length=50)
     classe = models.CharField(max_length=50)
     nivel = models.IntegerField(default=1)
+    vida_maxima = models.IntegerField(default=10)
     vida_atual = models.IntegerField(default=10)
     historia = models.TextField(blank=True)
     
@@ -61,6 +62,7 @@ class Personagem(models.Model):
     def __str__(self):
         status = "" if self.ativo else " (Inativo)"
         return f"{self.nome} - Nível {self.nivel}{status}"
+
 
 # --- Entidade 3: Rolagem ---
 class Rolagem(models.Model):
@@ -80,9 +82,4 @@ class Rolagem(models.Model):
     def __str__(self):
         nome = self.personagem.nome if self.personagem else self.jogador_nome
         status = " (Editado)" if self.editado else ""
-        return f"{nome} tirou {self.resultado} no {self.tipo_dado}{status}"
-
-    class Meta:
-        ordering = ['-data_hora']
-        verbose_name = "Rolagem de Dado"
-        verbose_name_plural = "Log de Rolagens"
+        return f"{nome} rolou {self.tipo_dado}: {self.resultado}{status}"

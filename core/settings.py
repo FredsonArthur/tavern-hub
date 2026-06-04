@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-# Build paths
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- SEGURANÇA (Produção): Chave secreta dinâmica por variável de ambiente ---
@@ -58,17 +58,27 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# --- REQUISITO (ii): Configuração do Banco de Dados PostgreSQL ---
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tavern_db',
-        'USER': 'postgres',
-        'PASSWORD': os.environ.get('DB_PASSWORD', '1234567890'), 
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+# --- CONFIGURAÇÃO DINÂMICA DO BANCO DE DADOS ---
+# Se a variável de ambiente do host do banco estiver configurada (como na AWS), usa o Postgres. 
+# Caso contrário (ambiente de desenvolvimento no Fedora), usa o SQLite local em arquivo.
+if os.environ.get('DB_HOST'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'tavern_db',
+            'USER': 'postgres',
+            'PASSWORD': os.environ.get('DB_PASSWORD', '1234567890'), 
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': '5432',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -86,10 +96,9 @@ USE_I18N = True
 USE_TZ = True
 
 
-# --- ARQUIVOS ESTÁTICOS (Configuração de Produção para Nginx) ---
+# --- ARQUIVOS ESTÁTICOS ---
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-# Local para onde o Django jogará todos os estáticos reunidos ao rodar 'collectstatic' na AWS
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
@@ -99,7 +108,7 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 
-# --- REQUISITO (viii): Configuração da Estratégia de Cache ---
+# --- CONFIGURAÇÃO DA ESTRATÉGIA DE CACHE ---
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',

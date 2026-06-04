@@ -20,13 +20,13 @@ class TavernHubTests(TestCase):
         # Entidade 1: Mesa
         self.mesa = Mesa.objects.create(titulo="Mesa de Testes", mestre=self.mestre)
 
-        # Entidade 2: Personagem (CORRIGIDO: Removidas as barras invertidas acidentais)
+        # Entidade 2: Personagem
         self.personagem = Personagem.objects.create(
             nome="Gimli", usuario=self.mestre, mesa=self.mesa, classe="Guerreiro", raca="Anao"
         )
 
-        # Utilizando 'raridade' ao invés de 'valor' para bater com o models.py atualizado
-        self.machado = Item.objects.create(nome="Machado Duplo", raridade="Raro", peso=5.0)
+        # CORRIGIDO: Utilizando 'raridade' e garantindo que o item nasça ativo=True para bater com o models.py
+        self.machado = Item.objects.create(nome="Machado Duplo", raridade="Raro", peso=5.0, ativo=True)
 
     # --- 1. TESTES DE UNIDADE (Unit Tests) ---
     def test_model_str_representations(self):
@@ -44,6 +44,9 @@ class TavernHubTests(TestCase):
             "tipo_dado": "D20",
             "personagem_id": self.personagem.id
         }
+
+        # Força a autenticação do cliente para bater com o decorator @login_required da API
+        self.client.login(username='mestre_supremo', password='123')
 
         # Envia requisição POST assíncrona (JSON)
         response = self.client.post(
@@ -81,7 +84,7 @@ class TavernHubTests(TestCase):
 
         # Tenta editar usando o usuário invasor
         self.client.login(username='invasor', password='123')
-        response = self.client.post(reverse('rollback_rolagem', args=[rolagem.id]), {'novo_resultado': 20})
+        response = self.client.post(reverse('rollback_rolagem', args=[rolagem.id]), {'novo_resultado': 20, 'motivo': 'Invasão'})
 
         # Deve retornar erro 403 (Proibido) conforme nossa View
         self.assertEqual(response.status_code, 403)
@@ -94,17 +97,18 @@ class TavernHubTests(TestCase):
 
     # --- 5. TESTES DE REGRESSÃO (Garantir que o Soft Delete continua funcionando) ---
     def test_soft_delete_permanece_ativo(self):
-        """Confirma que o personagem inativo não aparece na lista pública (Fase 3)."""
+        """Confirma que o personagem inativo não aparece na lista pública."""
         self.client.login(username='mestre_supremo', password='123')
         self.personagem.ativo = False
         self.personagem.save()
 
         response = self.client.get(reverse('lista_personagens'))
+        # Garante que o herói arquivado não é renderizado na listagem ativa
         self.assertNotContains(response, "Gimli")
 
     # --- 6. TESTES DE CARGA/ESTATÍSTICAS (Aggregation) ---
     def test_estatisticas_com_massa_de_dados(self):
-        """Cria várias rolagens e verifica se a média (Aggregation) está correta."""
+        """Cria várias rolagens e verifica se as funções agregadas do painel processam os valores corretos."""
         Rolagem.objects.create(resultado=10, jogador_nome="A")
         Rolagem.objects.create(resultado=20, jogador_nome="B")
 
@@ -114,3 +118,5 @@ class TavernHubTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['stats']['total_rolagens'], 2)
         self.assertEqual(response.context['stats']['media_geral'], 15.0)
+        # CORRIGIDO: Validando a chave exata 'maior_valor' gerada pela view
+        self.assertEqual(response.context['stats']['maior_valor'], 20)
