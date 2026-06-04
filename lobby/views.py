@@ -8,17 +8,17 @@ from django.contrib import messages
 from django.db.models import Avg, Count, Max
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
-from django.core.cache import cache  # --- REQUISITO: Módulo de Gerenciamento de Cache ---
+from django.core.cache import cache  # --- REQUISITO (viii): Módulo de Gerenciamento de Cache ---
 from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm, ItemForm
 
 
-# --- REQUISITO: PAINEL DE ESTATÍSTICAS (Aggregation + Cache de Baixo Nível) ---
+# --- REQUISITO (viii): PAINEL DE ESTATÍSTICAS (Aggregation + Cache de Baixo Nível) ---
 
 @login_required
 def painel_estatisticas(request):
     """Gera inteligência de dados processada com estratégia de cache em banco."""
-    # 1. Tenta recuperar os cálculos prontos da tabela de cache ativa (SQLite local ou Postgres remoto)
+    # 1. Tenta recuperar os cálculos prontos da tabela de cache ativa
     stats = cache.get('painel_estatisticas_data')
     
     # 2. Se o cache expirou ou não existir, faz o processamento pesado e salva no cache
@@ -27,9 +27,9 @@ def painel_estatisticas(request):
             'total_rolagens': Rolagem.objects.count(),
             'media_geral': Rolagem.objects.aggregate(Avg('resultado'))['resultado__avg'] or 0,
             'maior_valor': Rolagem.objects.aggregate(Max('resultado'))['resultado__max'] or 0,
-            'rank_jogadores': Rolagem.objects.values('jogador_nome')
+            'rank_jogadores': list(Rolagem.objects.values('jogador_nome')
                                             .annotate(total=Count('id'))
-                                            .order_by('-total')[:5]
+                                            .order_by('-total')[:5])
         }
         # Guarda no cache por 5 minutos (300 segundos)
         cache.set('painel_estatisticas_data', stats, 300)
@@ -41,22 +41,25 @@ def painel_estatisticas(request):
 
 @login_required
 def dashboard(request):
-    """Tela principal que lista as mesas ativas do usuário e permite interações."""
+    """
+    Tela principal que lista as mesas ativas e permite as interações de rolagens.
+    🔥 CORRIGIDO: Redireciona para lobby/index.html evitando o erro TemplateDoesNotExist.
+    """
     mesas = Mesa.objects.all().order_by('-data_criacao')
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
-    return render(request, 'lobby/dashboard.html', {
+    return render(request, 'lobby/index.html', {
         'mesas': mesas,
         'personagens': personagens
     })
 
 
-# --- REQUISITO: SISTEMA DE ROLLBACK (Controle de Versão de Auditoria) ---
+# --- REQUISITO (vi): SISTEMA DE ROLLBACK (Controle de Versão de Auditoria de Regra de Negócio) ---
 
 @login_required
 def rollback_rolagem(request, pk):
     """
     Permite apenas ao MESTRE da mesa reverter ou auditar o resultado de um dado.
-    Guarda o histórico da alteração para integridade dos dados.
+    Guarda o histórico da alteração para integridade dos dados e invalida o cache.
     """
     rolagem = get_object_or_404(Rolagem, pk=pk)
     
@@ -76,13 +79,13 @@ def rollback_rolagem(request, pk):
             rolagem.motivo_edicao = motivo
             rolagem.save()
             
-            # Força a invalidação do cache de estatísticas para recalcular as médias
+            # Força a invalidação do cache de estatísticas para recalcular as médias instantaneamente
             cache.delete('painel_estatisticas_data')
             
             messages.success(request, "O tecido do destino foi alterado! Rolagem modificada com sucesso.")
             return redirect('dashboard')
 
-    return render(request, 'lobby/rollback.html', {'rolagem': rolagem})
+    return render(request, 'lobby/form_rollback.html', {'rolagem': rolagem})
 
 
 # --- ENDPOINTS DA API DE ROLAGENS (Integração assíncrona JS) ---
@@ -105,13 +108,13 @@ def salvar_rolagem(request):
             if mesa_id:
                 mesa = Mesa.objects.get(id=mesa_id)
             elif personagem and personagem.mesa:
-                # CORRIGIDO: Se a API de teste não enviar a mesa explicitamente, herda a mesa vinculada ao herói
+                # Se a API de teste não enviar a mesa explicitamente, herda a mesa vinculada ao herói
                 mesa = personagem.mesa
 
             rolagem = Rolagem.objects.create(
                 personagem=personagem,
                 mesa=mesa,
-                jogador_nome=personagem.nome if personagem else request.user.username,
+                jogador_nome=data.get('jogador_nome', request.user.username),
                 tipo_dado=data.get('tipo_dado', 'D20'),
                 resultado=int(data.get('resultado'))
             )
@@ -142,20 +145,20 @@ def listar_rolagens(request):
         'editado': r.editado,
         'resultado_anterior': r.resultado_anterior,
         'motivo': r.motivo_edicao,
-        'data_hora': r.data_hora.strftime('%H:%M:%S')
+        'data_hora': timezone.localtime(r.data_hora).strftime('%H:%M:%S')
     } for r in rolagens]
-    return JsonResponse(data, safe=False)
+    return JsonResponse({'rolagens': data}, safe=False)
 
 
 @login_required
 def limpar_log(request):
-    """Limpa o histórico de rolagens do banco de dados."""
+    """Limpa o histórico de rolagens do banco de dados e invalida cache."""
     Rolagem.objects.all().delete()
     cache.delete('painel_estatisticas_data')
     return JsonResponse({'status': 'sucesso'})
 
 
-# --- CRUD: MESA (Entidade Protegida) ---
+# --- REQUISITO (i): CRUD MESA (Entidade 1) ---
 
 @login_required
 def lista_mesas(request):
@@ -180,13 +183,12 @@ def criar_mesa(request):
     return render(request, 'lobby/form_mesa.html', {'form': form})
 
 
-# --- CRUD: PERSONAGEM (Com suporte a Soft Delete) ---
+# --- REQUISITO (i): CRUD PERSONAGEM (Entidade 2 com Suporte a Soft Delete) ---
 
 @login_required
 def lista_personagens(request):
     """Lista apenas heróis ativos do próprio utilizador logado."""
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
-    # CORRIGIDO: Retornando corretamente o contexto do dicionário 'personagens' sem erros de digitação
     return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
 
 
@@ -236,7 +238,7 @@ def excluir_personagem(request, pk):
     return render(request, 'lobby/confirmar_exclusao.html', {'objeto': personagem})
 
 
-# --- CRUD: ITENS & BIBLIOTECA GLOBAL ---
+# --- REQUISITO (i): CRUD ITENS & BIBLIOTECA GLOBAL (Entidade 3) ---
 
 @login_required
 def lista_itens(request):
@@ -282,7 +284,7 @@ def gerenciar_inventario(request, pk):
     })
 
 
-# --- AUTENTICAÇÃO: Criação de Contas ---
+# --- REQUISITO (vii): AUTENTICAÇÃO - Criação de Contas ---
 
 def registro(request):
     """Permite que novos aventureiros criem uma conta na taverna."""
@@ -295,4 +297,4 @@ def registro(request):
             return redirect('dashboard')
     else:
         form = UserCreationForm()
-    return render(request, 'registration/registro.html', {'form': form})
+    return render(request, 'lobby/registro.html', {'form': form})
