@@ -13,8 +13,7 @@
             background: #1a1a1a; 
             color: #e0e0e0; 
             font-family: 'Segoe UI', sans-serif; 
-            padding-bottom: 60px; 
-        }
+            padding-bottom: 60px; \n        }
         .navbar-tavern {
             background-color: #111111 !important;
             border-bottom: 2px solid #8b0000;
@@ -23,8 +22,7 @@
             margin-top: 20px; 
             padding: 20px; 
             border: 2px solid #444; 
-            display: inline-block; 
-            border-radius: 10px; 
+            display: inline-block; \n            border-radius: 10px; 
             background: #252525; 
             box-shadow: 0 8px 16px rgba(0,0,0,0.4);
         }
@@ -32,14 +30,12 @@
             font-size: 3.5rem; 
             color: #ffcc00; 
             margin: 15px; 
-            font-weight: bold; 
-            min-height: 70px; 
+            font-weight: bold; \n            min-height: 70px; 
             text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
         }
         .dice-grid { 
             display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 10px; 
+            grid-template-columns: repeat(4, 1fr); \n            gap: 10px; 
             margin-top: 15px; 
         }
         button.dice-btn { 
@@ -49,30 +45,24 @@
             padding: 12px; 
             font-size: 1rem; 
             cursor: pointer; 
-            border-radius: 5px; 
-            transition: 0.2s ease-in-out; 
+            border-radius: 5px; \n            transition: 0.2s ease-in-out; 
             font-weight: bold;
         }
         button.dice-btn:hover { 
             background: #b22222; 
-            transform: scale(1.05); 
-        }
+            transform: scale(1.05); \n        }
         .log-container { 
             max-height: 400px; 
             overflow-y: auto; 
             background: #111; 
             padding: 15px; 
-            border-radius: 8px; 
-            border: 1px solid #444; 
+            border-radius: 8px; \n            border: 1px solid #444; 
         }
-        .log-entry { 
-            border-bottom: 1px solid #222; 
-            padding: 8px 0; 
-            font-size: 0.95rem; 
+        .log-entry { \n            border-bottom: 1px solid #222; 
+            padding: 8px 0; \n            font-size: 0.95rem; 
         }
         .log-entry:last-child { 
-            border-bottom: none; 
-        }
+            border-bottom: none; \n        }
         /* Personalização da barra de rolagem */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #111; }
@@ -106,25 +96,34 @@
                     </li>
                 </ul>
                 <div class="d-flex align-items-center">
-                    <span class="text-muted me-3 small"><i class="fas fa-user-shield"></i> {{ request.user.username }}</span>
-                    <form action="{% url 'logout' %}" method="post" class="m-0">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-right-from-bracket"></i> Sair</button>
-                    </form>
+                    {% if request.user.is_authenticated %}
+                        <span class="text-muted me-3 small"><i class="fas fa-user-shield"></i> {{ request.user.username }}</span>
+                        <form action="{% url 'logout' %}" method="post" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-right-from-bracket"></i> Sair</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-warning btn-sm me-2"><i class="fas fa-door-open"></i> Entrar</a>
+                        <a href="{% url 'registro' %}" class="btn btn-warning btn-sm fw-bold text-dark"><i class="fas fa-scroll"></i> Registrar-se</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </nav>
 
     {% if messages %}
-    <div class="container animate__animated animate__fadeInDown">
+    <div class="container mt-2 mb-2 animate__animated animate__fadeInDown">
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-                {% if message.tags == 'success' %}<i class="fas fa-circle-check"></i>
-                {% elif message.tags == 'danger' %}<i class="fas fa-triangle-exclamation"></i>
-                {% else %}<i class="fas fa-circle-info"></i>{% endif %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show bg-dark text-white border-0 shadow" role="alert" style="border-left: 4px solid {% if message.tags == 'success' %}#198754{% elif message.tags == 'warning' %}#ffc107{% else %}#dc3545{% endif %} !important;">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-circle-check text-success me-2"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-triangle-exclamation text-warning me-2"></i>
+                {% else %}
+                    <i class="fas fa-circle-exclamation text-danger me-2"></i>
+                {% endif %}
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
     </div>
@@ -196,11 +195,14 @@
                 .then(response => response.json())
                 .then(data => {
                     logDiv.innerHTML = "";
-                    if (data.rolagens.length === 0) {
+                    // Suporte tanto para o formato direto de array quanto para o empacotado {"rolagens": []}
+                    const rolagens = data.rolagens ? data.rolagens : data;
+                    
+                    if (rolagens.length === 0) {
                         logDiv.innerHTML = '<div class="text-center text-muted py-5">Nenhum dado rolado nesta sessão.</div>';
                         return;
                     }
-                    data.rolagens.forEach(r => {
+                    rolagens.forEach(r => {
                         const div = document.createElement('div');
                         div.className = "log-entry d-flex justify-content-between align-items-center animate__animated animate__fadeIn";
                         
@@ -208,7 +210,7 @@
                         if (r.tipo_dado === "D20" && r.resultado === 20) badgeColor = "bg-success";
                         if (r.tipo_dado === "D20" && r.resultado === 1) badgeColor = "bg-danger";
 
-                        let editTag = r.editado ? ` <span class="text-muted small italic" style="font-size:0.75rem;">(Corrigido por Mestre: "${r.motivo_edicao}")</span>` : "";
+                        let editTag = r.editado ? ` <span class="text-muted small italic" style="font-size:0.75rem;">(Corrigido por Mestre: "${r.motivo}")</span>` : "";
 
                         div.innerHTML = `
                             <div>
@@ -217,7 +219,7 @@
                                 <strong class="fs-5 text-light">${r.resultado}</strong>${editTag}
                             </div>
                             <div class="d-flex align-items-center">
-                                <span class="text-muted small me-2">${r.hora}</span>
+                                <span class="text-muted small me-2">${r.data_hora}</span>
                                 <a href="/lobby/rolagem/rollback/${r.id}/" class="btn btn-sm btn-outline-secondary p-1 py-0" style="font-size:0.7rem;" title="Corrigir valor (Mestre)">
                                     <i class="fas fa-pen-to-square"></i>
                                 </a>
@@ -234,7 +236,7 @@
             const selectPersonagem = document.getElementById('personagem-select');
             const inputNome = document.getElementById('jogador-nome-input');
             
-            let personagemId = selectPersonagem ? selectPersonagem.value : null;
+            let idPersonagem = selectPersonagem ? selectPersonagem.value : null;
             let nomeExibicao = "Aventureiro";
 
             if (selectPersonagem && selectPersonagem.selectedIndex > 0) {
@@ -252,7 +254,6 @@
                 else if(faces === 20 && roll === 1) resultDiv.style.color = "#ff0000";
                 else resultDiv.style.color = "#ffcc00";
 
-                // 🔥 CORRIGIDO: Chave de envio alterada para 'jogador_nome' para alinhar com views.py
                 fetch('/lobby/api/rolagem/salvar/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -260,7 +261,7 @@
                         "resultado": roll, 
                         "jogador_nome": nomeExibicao, 
                         "tipo_dado": "D" + faces,
-                        "personagem_id": personagemId 
+                        "personagem_id": idPersonagem 
                     })
                 })
                 .then(response => response.json())
@@ -276,7 +277,7 @@
             }
         }
 
-        // Pooling de 3 segundos para manter as rolagens atualizadas em tempo real
+        // Pooling ativo de 3 segundos
         document.addEventListener('DOMContentLoaded', () => {
             atualizarLog();
             setInterval(atualizarLog, 3000);
