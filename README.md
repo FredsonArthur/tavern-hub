@@ -1,74 +1,91 @@
 # 🏰 TavernHub — O Lobby de Sessão Interativo para RPG
 
-[![Python Version](https://img.shields.io/badge/Python-3.13+-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Django Version](https://img.shields.io/badge/Django-6.0+-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![Database](https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![OS](https://img.shields.io/badge/OS-Ubuntu_Linux-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://ubuntu.com/)
+<p align="center">
+  <img src="https://images.unsplash.com/photo-1519074069444-1ba4fff16411?q=80&w=1000&auto=format&fit=crop" alt="TavernHub Banner" width="100%" style="border-radius: 8px; max-height: 400px; object-fit: cover;">
+</p>
 
-O **TavernHub** é uma aplicação web projetada para ser o ponto de encontro de mesas de RPG. O objetivo é oferecer um dashboard em tempo real onde jogadores e mestres sincronizam rolagens de dados e gerenciam personagens, unindo a robustez do ecossistema **Django** com a interatividade de scripts **JavaScript** customizados.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.13+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Django-6.0+-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django">
+  <img src="https://img.shields.io/badge/Node.js-20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white" alt="RabbitMQ">
+  <img src="https://img.shields.io/badge/OS-Fedora_Linux-3C6EB4?style=for-the-badge&logo=fedora&logoColor=white" alt="OS Fedora Linux">
+</p>
 
-O sistema gerencia mesas de jogo e os seus respectivos personagens através de regras de negócio complexas, como exclusão lógica (*Soft Delete*), consistência de fuso horário internacional e relacionamentos automatizados via ORM nativo.
+O **TavernHub** é uma plataforma web de alta performance desenvolvida para atuar como o ponto de encontro virtual e centralizador de sessões de RPG de mesa. O sistema fornece um dashboard interativo em tempo real onde jogadores e mestres gerenciam fichas, moldam inventários complexos e realizam rolagens de dados auditáveis síncronas e assíncronas.
 
----
-
-## 🛠️ Tecnologias e Configurações de Ambiente
-
-| Componente | Tecnologia Empregada | Detalhes de Implementação |
-| :--- | :--- | :--- |
-| **Backend** | Python 3.13+ / Django 6.0+ | Arquitetura MVT robusta e persistência com ORM nativo. |
-| **Frontend** | Vanilla JS / Bootstrap 5 | Interface interativa com conexão via Fetch API/JSON. |
-| **Gestão de Dados**| SQLite | Suporte completo a Migrations e relacionamentos complexos. |
-| **Arquitetura** | Publish-Subscribe | Implementação de **Django Signals** para reatividade assíncrona. |
-| **Timezone** | `America/Sao_Paulo` | Log de atividades sincronizado com o Horário de Brasília (UTC-3). |
-| **Qualidade** | Django TestCase | Suíte completa com 100% de aprovação nos testes integrados. |
+Sua infraestrutura de software adota padrões avançados de engenharia, unindo a robustez do ecossistema corporativo **Django** no back-end principal com um microsserviço assíncrono em **Node.js** alimentado por mensageria via **RabbitMQ**. O resultado é uma arquitetura distribuída, fracamente acoplada, resiliente a falhas e otimizada com cache de baixo nível.
 
 ---
 
-## 🏗️ Arquitetura do Sistema e Estrutura de Pastas
+## 🛠️ Especificações Técnicas e Arquitetura do Ecossistema
 
-O projeto segue o padrão estrutural rígido do framework Django, separando responsabilidades lógicas e organizando os componentes sob o app core `lobby`:
+O ecossistema foi projetado dividindo responsabilidades de forma estrita entre os serviços para garantir isolamento de processos e consistência de dados:
 
+### 💻 Stack Tecnológica Homologada
+* **Back-end Core:** **Python 3.13+** e **Django 6.0+** utilizando o ORM nativo para mapeamento relacional, controle de concorrência e restrições de permissão.
+* **Broker de Mensagens:** **RabbitMQ (AMQP)** atuando como a espinha dorsal de eventos assíncronos no paradigma **Publish-Subscribe (Pub-Sub)**[cite: 4].
+* **Engine de Persistência Paralela (Store):** **Node.js 20+** rodando um consumidor nativo que captura streams de eventos da fila e escreve logs de auditoria em disco[cite: 4].
+* **Front-end / UX:** **Vanilla JavaScript (ES6)** orientado a eventos com transporte assíncrono de objetos estruturados via **Fetch API / JSON**[cite: 4], integrados a uma interface customizada em modo escuro utilizando **Bootstrap 5**[cite: 4].
+* **Camada de Cache:** Mecanismo de **Cache de Baixo Nível** em memória para blindagem de performance em consultas de agregação matemática.
+* **Fuso Horário:** Sincronização internacional configurada para o fuso `America/Sao_Paulo` (Horário de Brasília)[cite: 4].
+* **Ambiente de Desenvolvimento:** Sistema desenvolvido e testado nativamente sobre a distribuição **Fedora Linux**[cite: 4].
+
+### 🏗️ Fluxo de Dados Distribuído (Pub-Sub-Store)
 ```text
-tavern-hub/
-├── tavern_hub/             # Diretório de configurações do projeto global
-│   ├── settings.py         # Configurações de banco, fuso horário e segurança
-│   └── urls.py             # Roteamento global de endpoints do sistema
-├── lobby/                  # Aplicativo principal do ecossistema do jogo
-│   ├── models.py           # Modelos de dados mapeados no ORM (Personagem, Mesa, Item)
-│   ├── views.py            # Lógica de controle e renderização de requisições HTTP
-│   ├── signals.py          # Gatilhos automatizados e inteligência de dados
-│   ├── tests.py            # Suíte de blindagem e validação automatizada de software
-│   └── urls.py             # Rotas internas dinâmicas do aplicativo
-└── manage.py               # Utilitário de gerenciamento e execução de comandos
+  [ Jogador clica no d20 ]
+             │
+             ▼
+    ┌────────────────┐
+    │   Django App   │ ───► [ Persiste no SQLite / Invalida Cache ]
+    └────────────────┘
+             │
+             │ (Publica payload JSON do evento via AMQP)
+             ▼
+    ┌────────────────┐
+    │    RabbitMQ    │ [Fila Ativa: rolagens_dados]
+    └────────────────┘
+             │
+             │ (Consome assincronamente sem onerar o HTTP)
+             ▼
+    ┌────────────────┐
+    │  Worker Node   │ ───► [ Append em rolagens_store.json (Disco) ]
+    └────────────────┘
 ```
+🎯 Detalhes das Funcionalidades e Regras de Negócio👥 1. Módulo Relacional de Entidades (CRUDs Completos)Mesas de Jogo (Entidade Mestre): Centraliza as campanhas de RPG[cite: 4]. Possui relacionamento ForeignKey com o modelo User do Django para mapear o Mestre da mesa. A aplicação garante de forma automatizada que apenas o criador possua prerrogativas administrativas de edição sobre a mesa.  Fichas de Heróis (Entidade Personagem): Controla o ciclo de vida dos avatares dos jogadores[cite: 4]. Integra um mecanismo de Exclusão Lógica (Soft Delete) utilizando uma flag booleana ativo=True/False. Quando removido, o personagem fica oculto das listagens, mas seu histórico de jogo permanece intocado no banco de dados, protegendo estatísticas globais e logs de sessão.  Catálogo Global de Itens e Inventário (Many-to-Many): Engine de itens rica gerenciada via tabela associativa intermediária (ManyToManyField)[cite: 4]. Um item pode pertencer a vários heróis e um herói pode portar diversos itens em seu inventário de forma cumulativa[cite: 4].🔍 2. Mecanismo de Filtro Avançado CombinadoO painel de gerenciamento de personagens traz uma barra de busca multifator que intercepta requisições GET e monta dinamicamente consultas agregadas no banco de dados:  Busca Textual Dinâmica: Filtra registros por correspondência parcial ou total do nome digitado através da instrução ORM nome__icontains, garantindo que diferenças de caixa alta ou baixa não quebrem a pesquisa.  Filtro de Categoria Estrito: Executa a varredura exata de classes de jogo no banco com look-up classe__iexact.  Isolamento por Vínculo de Campanha: Permite buscar heróis pertencentes a uma ID de mesa específica ou caçar personagens sem grupo utilizando a cláusula de nulidade relacional mesa__isnull=True.  Preservação de Estado: Todos os inputs do formulário de filtro seguram o seu estado visível mesmo após a renderização da página, evitando que o usuário perda o contexto de busca atual.  📊 3. Inteligência de Dados, Cache e AuditoriaPainel de Análise (Aggregations): Computa em tempo de execução dados volumétricos e analíticos do servidor utilizando agregadores nativos da engine de banco do Django (Avg para médias de dados, Count para totalizadores e Max para recordes de jogadas).  Cache Computacional de Baixo Nível: Os resultados pesados gerados pelas agregações do painel são cacheados sob a chave painel_estatisticas_data com tempo de vida de 300 segundos. Para evitar inconsistência visual, qualquer nova inserção de rolagem ou alteração de estado no banco dispara uma instrução reativa de invalidação (cache.delete), forçando um recálculo sob demanda apenas quando estritamente necessário.  Sistema de Rollback Auditável: Se um dado cair da mesa ou houver divergência, o Mestre pode invocar o rollback de resultados[cite: 2, 4]. O sistema mantém a imutabilidade do histórico arquivando o dado anterior na coluna resultado_anterior, ativando o gatilho editado=True e bloqueando a transação caso uma justificativa textual detalhada não seja enviada pelo formulário.  Escopo de Segurança Hermético: Todas as operações sensíveis (como reverter rolagens e deletar dados) são validadas em nível de controlador via código Python, comparando o request.user com o mestre associado da mesa, devolvendo um HTTP 403 Forbidden imediato em caso de invasão ou requisição ilícita[cite: 2, 4].🗄️ Estrutura Arquitetural do Banco de DadosTabela: lobby_mesaCampoTipoDescriçãoidBigAutoField (PK)Identificador único sequencial da mesa.tituloCharField(200)Nome da mesa/campanha.data_criacaoDateTimeFieldRegistro cronológico da criação.mestre_idForeignKey (User)Usuário administrador responsável pela mesa.Tabela: lobby_personagemCampoTipoDescriçãoidBigAutoField (PK)Identificador único do personagem.nomeCharField(100)Nome do herói no jogo.racaCharField(50)Raça escolhida (Ex: Elfo, Anão).classeCharField(50)Classe de atuação (Ex: Mago, Guerreiro).nivelIntegerFieldNível de progressão do personagem.ativoBooleanFieldFlag controladora do Soft Delete (Padrão: True).usuario_idForeignKey (User)Jogador proprietário da ficha.mesa_idForeignKey (Mesa)Mesa de RPG na qual o personagem está inserido (Opcional).Tabela: lobby_itemCampoTipoDescriçãoidBigAutoField (PK)Identificador único do item no compêndio global.nomeCharField(100)Nome do equipamento (Ex: Espada Longa).raridadeCharField(50)Classificação (Comum, Raro, Lendário).ativoBooleanFieldFlag de controle de catálogo ativo.Tabela: lobby_rolagemCampoTipoDescriçãoidBigAutoField (PK)Código identificador do log do dado.jogador_nomeCharField(100)Nome legível exibido no feed de rolagens.tipo_dadoCharField(10)Tipo do poliedro acionado (D6, D20, D100).resultadoIntegerFieldValor atual computado no dado.resultado_anteriorIntegerFieldValor antigo guardado em caso de Rollback.editadoBooleanFieldIdentifica se o resultado foi alterado pelo Mestre (Padrão: False).motivo_edicaoTextFieldJustificativa preenchida para fins de auditoria técnica.data_horaDateTimeFieldTimestamp exato da jogada ajustado ao fuso regional.mesa_idForeignKey (Mesa)Contexto da campanha onde o dado foi lançado.personagem_idForeignKey (Personagem)Herói que executou a rolagem (Opcional).🚀 Instruções de Instalação e Execução (Fedora Linux)Siga os passos abaixo no terminal do seu Fedora para subir os serviços e rodar a aplicação:1. Clonar o Repositório e Preparar as Dependências do FedoraBash# Clone o projeto da taverna
+git clone [https://github.com/SeuUsuario/tavern-hub.git](https://github.com/SeuUsuario/tavern-hub.git)
+cd tavern-hub
 
-## 🎯 Funcionalidades & Progresso do Projeto
+# Instale os pacotes base de sistema necessários no Fedora
+sudo dnf update -y
+sudo dnf install -y python3-pip python3-devel gcc rabbitmq-server nodejs
+2. Configurar e Inicializar o Broker RabbitMQBash# Ative e inicialize o serviço do RabbitMQ pelo systemd
+sudo systemctl enable rabbitmq-server
+sudo systemctl start rabbitmq-server
 
-### 📦 Fase 1: O Tabuleiro Estático & Persistência `(Concluída ✅)`
-- [x] **Setup Inicial:** Configuração do projeto Django e estruturação do App Lobby.
-- [x] **Widget de Dados:** Interface interativa contendo múltiplos tipos de dados para rolagem (D4 a D100).
-- [x] **Comunicação Assíncrona:** Integração assíncrona Front-End e Back-End estabelecida através de chamadas estruturadas na Fetch API com tráfego de dados via JSON.
-- [x] **Log de Atividades:** Registro de logs com tratamento completo de fuso horário e **Internacionalização para o Horário de Brasília (UTC-3)**.
+# Verifique se o broker de mensageria está operacional e rodando com sucesso
+sudo systemctl status rabbitmq-server
+3. Configurar o Ambiente Python & DjangoBash# Crie e ative o ambiente isolado virtual
+python3 -m venv venv
+source venv/bin/activate
 
-### 👥 Fase 2: O Coração do RPG - CRUD & Entidades `(Concluída ✅)`
-- [x] **Gestão de Mesas:** Mapeamento e CRUD completo para criação, leitura e listagem de mesas de jogo ativas.
-- [x] **Gestão de Personagens:** CRUD operacional contendo as rotas de Criação, Consulta, Edição e Exclusão de fichas.
-- [x] **Integração de Entidades:** Arquitetura de banco configurada para permitir a vinculação dinâmica e em tempo real de múltiplos personagens a mesas distintas.
+# Instale as dependências core do ecossistema Python
+pip install --upgrade pip
+pip install -r requirements.txt
 
-### ⚡ Fase 3: Arquitetura Assíncrona & Lógica de Jogo `(Concluída ✅)`
-- [x] **Soft Delete de Personagens:** Mecanismo de exclusão lógica implementado por meio de flags booleanas no banco, impedindo a perda de dados históricos e mantendo a integridade referencial.
-- [x] **Paradigma Publish-Subscribe (Signals):** Acoplamento de gatilhos automatizados via Django Signals para monitoramento imediato de rolagens críticas e geração automática de logs de auditoria impressos diretamente no terminal do servidor.
-- [x] **API com Filtros Dinâmicos:** Criação e refinamento de endpoints legíveis que aceitam filtros parametrizados via URL para segmentação por tipo de dado.
+# Execute as migrações estruturais do banco de dados relacional
+python manage.py migrate
 
-### 🔐 Fase 4: Inteligência de Dados & Segurança `(Concluída ✅)`
-- [x] **Painel de Estatísticas (Aggregations):** Emprego de funções agregadoras nativas do banco de dados (`Avg`, `Count` e `Max`) para processamento de médias aritméticas, volumetria e ranking de pontuações de forma performática.
-- [x] **Sistema de Rollback (Versionamento):** Lógica estruturada para edições auditáveis de resultados salvando o histórico da rolagem e preservando o valor contido em `resultado_anterior`.
-- [x] **Mesa Protegida (Permissões):** Bloqueio de segurança em nível de rotas e visões. O acesso a edições ou rollbacks de jogadas é restrito exclusivamente ao usuário com credenciais de Mestre da mesa.
+# Crie um usuário mestre para gerenciar as primeiras mesas de jogo
+python manage.py createsuperuser
+4. Inicializar o Microsserviço de Persistência Paralela (Store)Abra uma nova aba de terminal, navegue até a pasta correspondente do projeto Node.js e ative o consumidor:Bash# Acesse o diretório do serviço Node
+cd caminhos/para/seu/projeto_node/
 
-### 🎒 Fase 5: Expansão de Inventário, UX & Estabilidade `(Concluída ✅)`
-- [x] **Gestão de Inventário (Many-to-Many):** Criação da entidade relacional `Item`, configurando uma relação do tipo *Muitos-para-Muitos* que permite que múltiplos personagens portem equipamentos variados e concomitantes.
-- [x] **Biblioteca Global de Itens:** Painel dedicado e interface construída com foco na forja rápida, catalogação e listagem geral de itens pertencentes ao cenário do mundo.
-- [x] **Sinais de Inteligência:** Desenvolvimento de regras de monitoramento automatizadas via sinais para detecção em tempo real e alerta visual de eventos como "Maré de Azar" (quando ocorrem 3 falhas seguidas) e notificações de "Riqueza".
-- [x] **Feedback Visual (Django Messages):** Acoplamento do módulo de mensagens nativas do Django para renderizar alertas visuais flutuantes de sucesso, erros de operação e avisos importantes na interface do usuário.
-- [x] **Navegação Consolidada:** Padronização estética baseada em herança estrutural de blocks em templates HTML globais e criação de links rápidos direcionando o gerenciamento do inventário dentro da tela de detalhes do personagem.
-- [x] **Suíte de Testes Automatizados:** Cobertura de testes unitários e testes integrados robustos. Validação contendo checagem de Sinais M2M, restrições e travas de segurança de Views e testes de regressão de exclusão lógica (Soft Delete) operando com 100% de aprovação.
+# Instale as dependências de pacotes do npm (como o amqplib)
+npm install
+
+# Inicie o worker de escuta da fila AMQP
+node consumidor.js
+5. Rodar a Aplicação Web e a Suíte de TestesDe volta ao terminal principal com a venv ativa, rode o servidor web do Django:Bash# Inicie o servidor local integrado
+python manage.py runserver
+Acesse a aplicação pela URL padrão: http://127.0.0.1:8000/Para validar a integridade estrutural contra regressões ou falhas em tempo de execução, execute a suíte de testes:Bashpython manage.py test

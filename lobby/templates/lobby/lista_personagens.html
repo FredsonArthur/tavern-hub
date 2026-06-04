@@ -7,6 +7,47 @@
         <a href="{% url 'criar_personagem' %}" class="btn btn-success">➕ Novo Herói</a>
     </div>
 
+    <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
+        <div class="card-header border-secondary" style="background-color: #1a1a1a;">
+            <h5 class="mb-0 text-warning">🔮 Mecanismo de Busca e Filtragem</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{% url 'lista_personagens' %}" class="row g-3">
+                <div class="col-md-4">
+                    <label for="nome" class="form-label font-monospace" style="font-size: 0.85rem;">Nome do Herói</label>
+                    <input type="text" name="nome" id="nome" class="form-control bg-secondary text-white border-dark" 
+                           placeholder="Ex: Arthas..." value="{{ filtros.nome }}">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="classe" class="form-label font-monospace" style="font-size: 0.85rem;">Classe</label>
+                    <select name="classe" id="classe" class="form-select bg-secondary text-white border-dark">
+                        <option value="">Todas as Classes</option>
+                        {% for classe in classes_disponiveis %}
+                            <option value="{{ classe }}" {% if filtros.classe == classe %}selected{% endif %}>{{ classe }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="mesa" class="form-label font-monospace" style="font-size: 0.85rem;">Mesa Vinculada</label>
+                    <select name="mesa" id="mesa" class="form-select bg-secondary text-white border-dark">
+                        <option value="">Todas as Mesas</option>
+                        <option value="sem_mesa" {% if filtros.mesa == 'sem_mesa' %}selected{% endif %}>❌ Sem Mesa Cadastrada</option>
+                        {% for mesa in mesas_disponiveis %}
+                            <option value="{{ mesa.id }}" {% if filtros.mesa == mesa.id|stringformat:"s" %}selected{% endif %}>🏰 {{ mesa.titulo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-warning w-100 text-dark fw-bold">Filtrar</button>
+                    <a href="{% url 'lista_personagens' %}" class="btn btn-outline-secondary w-100" title="Limpar Filtros">🧹</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="row">
         {% for personagem in personagens %}
             <div class="col-md-4 mb-4">
@@ -23,7 +64,7 @@
                             </a>
                             
                             <div class="btn-group mt-2">
-                                <a href="{% url 'editar_personagem' personagem.id %}" class="btn btn-outline-primary btn-sm">Editar</a>
+                                <a href="{% url 'editar_personagem' personagem.id %}\" class="btn btn-outline-primary btn-sm">Editar</a>
                                 <a href="{% url 'excluir_personagem' personagem.id %}" class="btn btn-outline-danger btn-sm">Arquivar</a>
                             </div>
                         </div>
@@ -35,8 +76,8 @@
             </div>
         {% empty %}
             <div class="col-12 text-center py-5">
-                <p class="text-muted fs-4">Você ainda não possui personagens ativos.</p>
-                <a href="{% url 'criar_personagem' %}" class="btn btn-lg btn-primary mt-3">Começar Jornada</a>
+                <p class="text-muted fs-4">Nenhum herói encontrado com os filtros aplicados.</p>
+                <a href="{% url 'lista_personagens' %}" class="btn btn-md btn-outline-warning mt-2">Limpar Busca</a>
             </div>
         {% endfor %}
     </div>
@@ -54,5 +95,14 @@
         box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2) !important;
     }
     .btn-warning:hover { background-color: #ffcc00; }
+    
+    /* Ajustes finos nos inputs do formulário para combinar com o tema escuro */
+    .form-control::placeholder { color: #aaaaaa; }
+    .form-control:focus, .form-select:focus {
+        background-color: #444444 !important;
+        color: #fff !important;
+        border-color: #ffcc00 !important;
+        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.25) !important;
+    }
 </style>
 {% endblock %}

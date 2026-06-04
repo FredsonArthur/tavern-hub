@@ -5,12 +5,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Avg, Count, Max
+from django.db.models import Avg, Count, Max, Q
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
 from django.core.cache import cache  # --- REQUISITO (viii): Módulo de Gerenciamento de Cache ---
 from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm, ItemForm
+from .messaging import publicar_rolagem
 
 
 # --- REQUISITO (viii): PAINEL DE ESTATÍSTICAS (Aggregation + Cache de Baixo Nível) ---
@@ -111,6 +112,7 @@ def salvar_rolagem(request):
                 # Se a API de teste não enviar a mesa explicitamente, herda a mesa vinculada ao herói
                 mesa = personagem.mesa
 
+            # Salva o registro no banco de dados normalmente
             rolagem = Rolagem.objects.create(
                 personagem=personagem,
                 mesa=mesa,
@@ -119,6 +121,19 @@ def salvar_rolagem(request):
                 resultado=int(data.get('resultado'))
             )
             
+            # 📡 --- INTEGRAÇÃO DO REQUISITO (iv) PUB-SUB ---
+            # Monta o payload do evento com dados estruturados
+            evento_dados = {
+                'id': rolagem.id,
+                'jogador_nome': rolagem.jogador_nome,
+                'tipo_dado': rolagem.tipo_dado,
+                'resultado': rolagem.resultado,
+                'data_hora': timezone.localtime(rolagem.data_hora).strftime('%d/%m/%Y %H:%M:%S')
+            }
+            # Dispara o evento assincronamente para a fila do RabbitMQ
+            publicar_rolagem(evento_dados)
+            # -----------------------------------------------
+
             # Força a limpeza do cache de estatísticas a cada nova rolagem
             cache.delete('painel_estatisticas_data')
 
@@ -183,13 +198,51 @@ def criar_mesa(request):
     return render(request, 'lobby/form_mesa.html', {'form': form})
 
 
-# --- REQUISITO (i): CRUD PERSONAGEM (Entidade 2 com Suporte a Soft Delete) ---
+# --- REQUISITO (i) e (ii): CRUD PERSONAGEM (Com Suporte a Soft Delete e Filtros Avançados) ---
 
 @login_required
 def lista_personagens(request):
-    """Lista apenas heróis ativos do próprio utilizador logado."""
+    """
+    Lista apenas heróis ativos do próprio usuário logado com suporte a Filtro Avançado — Requisito (ii).
+    Permite combinar buscas textuais, filtros por classe e vínculos de mesa dinamicamente.
+    """
+    # 1. Base inicial: heróis ativos pertencentes ao usuário logado
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
-    return render(request, 'lobby/lista_personagens.html', {'personagens': personagens})
+
+    # 2. Captura os parâmetros de filtragem enviados via URL string (?nome=...&classe=...)
+    busca_nome = request.GET.get('nome', '').strip()
+    busca_classe = request.GET.get('classe', '').strip()
+    busca_mesa = request.GET.get('mesa', '').strip()
+
+    # 3. Aplica os filtros progressivamente no queryset
+    if busca_nome:
+        personagens = personajes.filter(nome__icontains=busca_nome)
+    
+    if busca_classe:
+        personagens = personajes.filter(classe__iexact=busca_classe)
+        
+    if busca_mesa:
+        if busca_mesa == 'sem_mesa':
+            personagens = personajes.filter(mesa__isnull=True)
+        else:
+            personagens = personajes.filter(mesa_id=busca_mesa)
+
+    # 4. Dados auxiliares para popular as caixas de seleção (select options) na interface
+    mesas_disponiveis = Mesa.objects.all().order_by('titulo')
+    
+    # Lista estática com base no padrão do formulário RPG da aplicação
+    classes_disponiveis = ['Guerreiro', 'Mago', 'Ladino', 'Clérigo', 'Arqueiro', 'Bárbaro', 'Paladino']
+
+    return render(request, 'lobby/lista_personagens.html', {
+        'personagens': personagens.order_by('nome'),
+        'mesas_disponiveis': mesas_disponiveis,
+        'classes_disponiveis': classes_disponiveis,
+        'filtros': {
+            'nome': busca_nome,
+            'classe': busca_classe,
+            'mesa': busca_mesa
+        }
+    })
 
 
 @login_required
