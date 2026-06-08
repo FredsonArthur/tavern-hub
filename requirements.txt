@@ -7,3 +7,4 @@ psycopg2-binary
 pika
 dj-database-url
 gunicorn
+whitenoise==6.8.0
