@@ -6,7 +6,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- SEGURANÇA (Produção): Chave secreta dinâmica por variável de ambiente ---
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-(^ma1_napt#0zamw!2c7lx^0@3&bzj694byq5l7+$v%fgr57q_')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
