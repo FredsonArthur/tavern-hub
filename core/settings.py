@@ -11,8 +11,9 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-(^ma1_napt#0za
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-# Hosts permitidos em produção (inclui localhost e aceita domínios da AWS)
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Define os hosts permitidos
+# Adicionamos 'tavern-hub.onrender.com' e usamos o .get para permitir sobrescrever via variável de ambiente
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,tavern-hub.onrender.com').split(',')
 
 # Application definition
 INSTALLED_APPS = [
