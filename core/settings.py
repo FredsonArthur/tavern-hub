@@ -1,5 +1,6 @@
-from pathlib import Path
 import os
+import dj_database_url
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,14 +9,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-(^ma1_napt#0zamw!2c7lx^0@3&bzj694byq5l7+$v%fgr57q_')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 # Hosts permitidos em produção (inclui localhost e aceita domínios da AWS)
-ALLOWED_HOSTS = [
-    '.amazonaws.com', 
-    'localhost', 
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -59,27 +56,16 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # --- CONFIGURAÇÃO DINÂMICA DO BANCO DE DADOS ---
-# Se a variável de ambiente do host do banco estiver configurada (como na AWS), usa o Postgres. 
-# Caso contrário (ambiente de desenvolvimento no Fedora), usa o SQLite local em arquivo.
-if os.environ.get('DB_HOST'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'tavern_db',
-            'USER': 'postgres',
-            'PASSWORD': os.environ.get('DB_PASSWORD', '1234567890'), 
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': '5432',
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+# O dj_database_url lerá a variável DATABASE_URL. 
+# Se ela não existir, usamos o fallback para o serviço 'db' do seu docker-compose.
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get(
+            'DATABASE_URL', 
+            'postgres://postgres:1234567890@db:5432/tavern_db'
+        )
+    )
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
