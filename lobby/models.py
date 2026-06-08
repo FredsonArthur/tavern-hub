@@ -19,11 +19,11 @@ class Item(models.Model):
     peso = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     raridade = models.CharField(
         max_length=20, 
-        choices=RARIDADE_CHOICES, \
+        choices=RARIDADE_CHOICES, 
         default='Comum'
     )
-    # CORRIGIDO: Adicionado o campo ativo para suportar o Soft Delete e as queries da views.py
-    ativo = models.BooleanField(default=True)
+    # Adicionado db_index para acelerar as buscas de Soft Delete
+    ativo = models.BooleanField(default=True, db_index=True)
 
     def __str__(self):
         return f"{self.nome} ({self.raridade})"
@@ -53,8 +53,8 @@ class Personagem(models.Model):
     vida_atual = models.IntegerField(default=10)
     historia = models.TextField(blank=True)
     
-    # IMPLEMENTADO: Soft Delete
-    ativo = models.BooleanField(default=True)
+    # IMPLEMENTADO: Soft Delete com índice para performance
+    ativo = models.BooleanField(default=True, db_index=True)
 
     # IMPLEMENTADO: Relacionamento Many-to-Many para Inventário
     itens = models.ManyToManyField(Item, blank=True, related_name="possuidores")
