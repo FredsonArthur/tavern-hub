@@ -19,6 +19,7 @@
 ---
 
 ## 🏗️ Arquitetura do Sistema
+```
 +-----------------------------------------------------------------------------------+
 | 🌐 USUÁRIOS (Browser) |
 +----------------------------------------+------------------------------------------+
@@ -50,7 +51,7 @@ v
 +--------------------------------------------------------+----------------------------+
 | 🐘 PostgreSQL (Dados Persistentes) |
 +-------------------------------------------------------------------------------------+
-
+```
 ---
 
 ## 🛠️ Tecnologias Utilizadas
@@ -137,59 +138,86 @@ sudo systemctl status rabbitmq-server
 ```
 ## Ambiente Python & Django
 ### Clone o repositório
+```
 git clone https://github.com/FredsonArthur/tavern-hub.git
 cd tavern-hub
+```
 
 ### Crie e ative o ambiente virtual
+```
 python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
-### venv\Scripts\activate   # Windows
+venv\Scripts\activate   # Windows
+```
 
 ### Instale as dependências
+```
 pip install -r requirements.txt
+```
 
 ### Configure variáveis de ambiente (copie o exemplo)
+```
 cp .env.example .env
+```
 ### Edite o .env com suas configurações
 
 ### Execute as migrações
+```
 python manage.py migrate
 python manage.py createcachetable
+```
 
 ### Crie um superusuário (administrador)
+```
 python manage.py createsuperuser
+```
 
-Configurar Banco de Dados (PostgreSQL)
+### Configurar Banco de Dados (PostgreSQL)
 ### Usando Docker (recomendado)
+```
 docker-compose up -d
+```
 
 ### Ou configure manualmente no .env
 ### DATABASE_URL=postgresql://usuario:senha@localhost:5432/tavernhub
 
-Microsserviço de Persistência (Store)
+### Microsserviço de Persistência (Store)
 ### Abra um novo terminal
+```
 cd microservico-pubsub
 npm install
 npm start
+```
 ### ou
+```
 node consumer.js
+```
 
-Execução do Servidor Web
+### Execução do Servidor Web
 ### No terminal principal (venv ativa)
+```
 python manage.py runserver
+```
 
 ## 🧪 Suíte de Testes
 Para validar a integridade estrutural e evitar regressões:
 ### Executar todos os testes
+```
 python manage.py test
+```
 
 ### Testes específicos do app lobby
+```
 python manage.py test lobby
+```
 
 ### Com maior verbosidade
+```
 python manage.py test --verbosity=2
+```
 
 ## 📁 Estrutura do Projeto
+```
 tavern-hub/
 ├── core/                    # Configurações Django
 │   ├── settings.py          # Configurações (com suporte a .env)
@@ -210,8 +238,10 @@ tavern-hub/
 ├── docker-compose.yml       # PostgreSQL + RabbitMQ
 ├── requirements.txt         # Dependências Python
 └── README.md                # Este arquivo
+```
 
 ## 📊 Diagrama ER (Entidades)
+```
 +-------------+     +-------------+     +-------------+
 |    User     |     |    Mesa     |     | Personagem  |
 +-------------+     +-------------+     +-------------+
@@ -238,6 +268,7 @@ tavern-hub/
 |                personagem_itens                   |
 |            (Tabela pivô Many-to-Many)             |
 +---------------------------------------------------+
+```
 
 ## 📝 Licença
 
