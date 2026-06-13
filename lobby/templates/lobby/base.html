@@ -18,39 +18,115 @@
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .nav-link:hover { color: #ffcc00 !important; transform: translateY(-2px); transition: all 0.2s; }
+        .dropdown-menu-dark { background-color: #1a1a1a; border-color: #8b0000; }
     </style>
 </head>
 <body>
 
-    <!-- Navbar Global -->
+    <!-- Navbar Global Completa -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-tavern mb-4 shadow">
         <div class="container">
             <a class="navbar-brand text-warning fw-bold fs-4" href="{% url 'dashboard' %}">
                 <i class="fas fa-dungeon"></i> TavernHub
             </a>
-            <!-- Conteúdo da Navbar (Links de navegação aqui...) -->
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <!-- Links para usuários logados -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'dashboard' %}">
+                                <i class="fas fa-home"></i> Início
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'lista_mesas' %}">
+                                <i class="fas fa-dragon"></i> Mesas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'lista_personagens' %}">
+                                <i class="fas fa-users"></i> Personagens
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'lista_itens' %}">
+                                <i class="fas fa-box"></i> Itens
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'painel_estatisticas' %}">
+                                <i class="fas fa-chart-line"></i> Estatísticas
+                            </a>
+                        </li>
+                        
+                        <!-- Dropdown do usuário -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-user"></i> Perfil
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt"></i> Sair
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <!-- Links para visitantes -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="fas fa-sign-in-alt"></i> Entrar
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'registro' %}">
+                                <i class="fas fa-user-plus"></i> Registrar
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </nav>
 
-    <!-- Mensagens Globais (Otimização para feedback ao usuário) -->
+    <!-- Mensagens Globais -->
     <div class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                    <i class="fas fa-info-circle"></i> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
-    <!-- Bloco principal de conteúdo das páginas -->
+    <!-- Bloco principal -->
     <div id="main-content">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Scripts Globais -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Rodapé -->
+    <footer class="fixed-bottom text-center text-muted small py-2" style="background-color: #0a0a0a; border-top: 1px solid #8b0000;">
+        <span>🏰 TavernHub - Sistema de RPG com Pub/Sub e Cache</span>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
