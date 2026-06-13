@@ -1,287 +1,131 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TavernHub - Lobby de Sessão</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    
-    <style>
-        body { 
-            background: #1a1a1a; 
-            color: #e0e0e0; 
-            font-family: 'Segoe UI', sans-serif; 
-            padding-bottom: 60px; \n        }
-        .navbar-tavern {
-            background-color: #111111 !important;
-            border-bottom: 2px solid #8b0000;
-        }
-        .dice-container { 
-            margin-top: 20px; 
-            padding: 20px; 
-            border: 2px solid #444; 
-            display: inline-block; \n            border-radius: 10px; 
-            background: #252525; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-        }
-        #result { 
-            font-size: 3.5rem; 
-            color: #ffcc00; 
-            margin: 15px; 
-            font-weight: bold; \n            min-height: 70px; 
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
-        }
-        .dice-grid { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); \n            gap: 10px; 
-            margin-top: 15px; 
-        }
-        button.dice-btn { 
-            background: #8b0000; 
-            color: white; 
-            border: none; 
-            padding: 12px; 
-            font-size: 1rem; 
-            cursor: pointer; 
-            border-radius: 5px; \n            transition: 0.2s ease-in-out; 
-            font-weight: bold;
-        }
-        button.dice-btn:hover { 
-            background: #b22222; 
-            transform: scale(1.05); \n        }
-        .log-container { 
-            max-height: 400px; 
-            overflow-y: auto; 
-            background: #111; 
-            padding: 15px; 
-            border-radius: 8px; \n            border: 1px solid #444; 
-        }
-        .log-entry { \n            border-bottom: 1px solid #222; 
-            padding: 8px 0; \n            font-size: 0.95rem; 
-        }
-        .log-entry:last-child { 
-            border-bottom: none; \n        }
-        /* Personalização da barra de rolagem */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-    </style>
-</head>
-<body>
+{% extends 'lobby/base.html' %}
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-tavern mb-4 shadow">
-        <div class="container">
-            <a class="navbar-brand text-warning fw-bold fs-4" href="{% url 'dashboard' %}">
-                <i class="fas fa-dungeon"></i> TavernHub
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="{% url 'lista_mesas' %}"><i class="fas fa-scroll"></i> Minhas Mesas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="{% url 'lista_personagens' %}"><i class="fas fa-users"></i> Meus Personagens</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="{% url 'lista_itens' %}"><i class="fas fa-shield-halved"></i> Arsenal (Itens)</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-info" href="{% url 'painel_estatisticas' %}"><i class="fas fa-chart-line"></i> Estatísticas</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center">
-                    {% if request.user.is_authenticated %}
-                        <span class="text-muted me-3 small"><i class="fas fa-user-shield"></i> {{ request.user.username }}</span>
-                        <form action="{% url 'logout' %}" method="post" class="m-0">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-right-from-bracket"></i> Sair</button>
-                        </form>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-outline-warning btn-sm me-2"><i class="fas fa-door-open"></i> Entrar</a>
-                        <a href="{% url 'registro' %}" class="btn btn-warning btn-sm fw-bold text-dark"><i class="fas fa-scroll"></i> Registrar-se</a>
-                    {% endif %}
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+    <div class="text-center mb-4">
+        <h1 class="text-warning">Bem-vindo à Taverna</h1>
+        <p class="text-muted">Role os dados ou gerencie suas mesas e personagens.</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="dice-container p-4 border border-secondary rounded bg-dark shadow-lg">
+                <h3 id="resultado-dado" class="display-1 text-warning">--</h3>
+                <div class="mt-3">
+                    <button class="btn btn-danger btn-lg" onclick="rolarDado(20)">D20</button>
+                    <button class="btn btn-outline-light btn-lg" onclick="rolarDado(6)">D6</button>
+                    <button class="btn btn-outline-info btn-lg" onclick="rolarDado(4)">D4</button>
+                    <button class="btn btn-outline-success btn-lg" onclick="rolarDado(8)">D8</button>
+                    <button class="btn btn-outline-warning btn-lg" onclick="rolarDado(10)">D10</button>
+                    <button class="btn btn-outline-secondary btn-lg" onclick="rolarDado(12)">D12</button>
                 </div>
             </div>
         </div>
-    </nav>
-
-    {% if messages %}
-    <div class="container mt-2 mb-2 animate__animated animate__fadeInDown">
-        {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show bg-dark text-white border-0 shadow" role="alert" style="border-left: 4px solid {% if message.tags == 'success' %}#198754{% elif message.tags == 'warning' %}#ffc107{% else %}#dc3545{% endif %} !important;">
-                {% if message.tags == 'success' %}
-                    <i class="fas fa-circle-check text-success me-2"></i>
-                {% elif message.tags == 'warning' %}
-                    <i class="fas fa-triangle-exclamation text-warning me-2"></i>
-                {% else %}
-                    <i class="fas fa-circle-exclamation text-danger me-2"></i>
-                {% endif %}
-                {{ message }}
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
     </div>
-    {% endif %}
 
-    <div id="main-content">
-        {% block content %}
-        <div class="container animate__animated animate__fadeIn">
-            <h1 class="mb-2 text-warning" style="font-family: 'Georgia', serif;">🏰 Salão Principal da Taverna</h1>
-            <p class="text-muted">Acomode-se, selecione seu herói e prepare seus dados para a sessão em tempo real.</p>
-            
-            <div class="row mt-4 justify-content-center">
-                <div class="col-md-5 mb-4">
-                    <div class="dice-container w-100">
-                        <h4 class="text-light border-bottom border-secondary pb-2"><i class="fas fa-dice"></i> Forja de Destinos</h4>
-                        
-                        <div class="mt-3 text-start">
-                            <label class="form-label text-warning small fw-bold">1. Escolha seu Herói Ativo (Opcional):</label>
-                            <select id="personagem-select" class="form-select bg-dark text-white border-secondary">
-                                <option value="">Nenhum (Rolar como Jogador Comum)</option>
-                                {% for p in personagens %}
-                                    <option value="{{ p.id }}">{{ p.nome }} ({{ p.classe }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-light"><i class="fas fa-scroll"></i> Crônicas Recentes</h4>
+            <button class="btn btn-sm btn-outline-danger" onclick="limparLogServidor()">Limpar Logs</button>
+        </div>
+        <div id="log-container" class="bg-black p-3 rounded border border-secondary" style="min-height: 200px; font-family: monospace; max-height: 300px; overflow-y: auto;">
+            <div class="text-muted text-center">Aguardando rolagens...</div>
+        </div>
+    </div>
+</div>
 
-                        <div class="mt-3 text-start">
-                            <label class="form-label text-warning small fw-bold">2. Nome Alternativo de Exibição:</label>
-                            <input type="text" id="jogador-nome-input" class="form-control bg-dark text-white border-secondary" placeholder="Ex: Visitante Misterioso">
-                        </div>
-
-                        <div id="result">20</div>
-                        
-                        <div class="dice-grid">
-                            <button class="dice-btn" onclick="rollDice(4)">D4</button>
-                            <button class="dice-btn" onclick="rollDice(6)">D6</button>
-                            <button class="dice-btn" onclick="rollDice(8)">D8</button>
-                            <button class="dice-btn" onclick="rollDice(10)">D10</button>
-                            <button class="dice-btn" onclick="rollDice(12)">D12</button>
-                            <button class="dice-btn" onclick="rollDice(20)">D20</button>
-                            <button class="dice-btn" onclick="rollDice(100)">D100</button>
-                            <button class="dice-btn bg-secondary" onclick="limparLogServidor()"><i class="fas fa-trash-can"></i> Limpar</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-7 mb-4">
-                    <div class="card bg-dark text-white border-secondary p-3 shadow-lg h-100">
-                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
-                            <h4 class="m-0 text-light"><i class="fas fa-list-ul"></i> Crônicas de Rolagens</h4>
-                            <span class="badge bg-danger animate__animated animate__pulse animate__infinite">Ao Vivo</span>
-                        </div>
-                        <div id="log-rolagens" class="log-container text-start flex-grow-1">
-                            <div class="text-center text-muted py-5">Carregando pergaminhos do servidor...</div>
-                        </div>
-                    </div>
-                </div>
+<div class="container mt-4">
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-dark border-danger text-center p-3">
+                <i class="fas fa-dice-d20 fa-3x text-warning mb-2"></i>
+                <h5>Rolagens em Tempo Real</h5>
+                <small class="text-muted">Pub/Sub com RabbitMQ</small>
             </div>
         </div>
-        {% endblock %}
+        <div class="col-md-4 mb-3">
+            <div class="card bg-dark border-danger text-center p-3">
+                <i class="fas fa-chart-line fa-3x text-info mb-2"></i>
+                <h5>Estatísticas com Cache</h5>
+                <small class="text-muted">Otimização de consultas</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-dark border-danger text-center p-3">
+                <i class="fas fa-history fa-3x text-success mb-2"></i>
+                <h5>Rollback e Auditoria</h5>
+                <small class="text-muted">Correções com histórico</small>
+            </div>
+        </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_scripts %}
+<script>
+    const nomeExibicao = "{{ user.username|default:'Aventureiro' }}";
+    const idPersonagem = null;
 
-    <script>
-        function atualizarLog() {
-            const logDiv = document.getElementById('log-rolagens');
-            fetch('/lobby/api/rolagem/listar/')
-                .then(response => response.json())
-                .then(data => {
-                    logDiv.innerHTML = "";
-                    // Suporte tanto para o formato direto de array quanto para o empacotado {"rolagens": []}
-                    const rolagens = data.rolagens ? data.rolagens : data;
-                    
-                    if (rolagens.length === 0) {
-                        logDiv.innerHTML = '<div class="text-center text-muted py-5">Nenhum dado rolado nesta sessão.</div>';
-                        return;
-                    }
-                    rolagens.forEach(r => {
-                        const div = document.createElement('div');
-                        div.className = "log-entry d-flex justify-content-between align-items-center animate__animated animate__fadeIn";
-                        
-                        let badgeColor = "bg-secondary";
-                        if (r.tipo_dado === "D20" && r.resultado === 20) badgeColor = "bg-success";
-                        if (r.tipo_dado === "D20" && r.resultado === 1) badgeColor = "bg-danger";
+    function atualizarLog() {
+        fetch('/lobby/api/rolagem/listar/')
+            .then(response => response.json())
+            .then(data => {
+                const logDiv = document.getElementById('log-container');
+                if (data.rolagens && data.rolagens.length > 0) {
+                    logDiv.innerHTML = data.rolagens.map(r => 
+                        `<div class="border-bottom border-secondary py-1"><small class="text-muted">[${r.data_hora}]</small> <strong>${r.jogador}</strong> rolou ${r.tipo_dado}: <span class="text-warning fw-bold">${r.resultado}</span>${r.editado ? ' <span class="badge bg-danger">Editado</span>' : ''}</div>`
+                    ).join('');
+                } else {
+                    logDiv.innerHTML = '<div class="text-muted text-center">Nenhuma rolagem registrada ainda.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar logs:', error);
+            });
+    }
 
-                        let editTag = r.editado ? ` <span class="text-muted small italic" style="font-size:0.75rem;">(Corrigido por Mestre: "${r.motivo}")</span>` : "";
-
-                        div.innerHTML = `
-                            <div>
-                                <strong class="text-warning">${r.jogador}</strong> rolou um 
-                                <span class="badge ${badgeColor}">${r.tipo_dado}</span> e obteve 
-                                <strong class="fs-5 text-light">${r.resultado}</strong>${editTag}
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <span class="text-muted small me-2">${r.data_hora}</span>
-                                <a href="/lobby/rolagem/rollback/${r.id}/" class="btn btn-sm btn-outline-secondary p-1 py-0" style="font-size:0.7rem;" title="Corrigir valor (Mestre)">
-                                    <i class="fas fa-pen-to-square"></i>
-                                </a>
-                            </div>
-                        `;
-                        logDiv.appendChild(div);
-                    });
-                })
-                .catch(error => console.error('Erro ao ler logs:', error));
-        }
-
-        function rollDice(faces) {
-            const resultDiv = document.getElementById('result');
-            const selectPersonagem = document.getElementById('personagem-select');
-            const inputNome = document.getElementById('jogador-nome-input');
+    function rolarDado(faces) {
+        const resultDiv = document.getElementById('resultado-dado');
+        resultDiv.innerText = "...";
+        
+        setTimeout(() => {
+            const roll = Math.floor(Math.random() * faces) + 1;
+            resultDiv.innerText = roll;
             
-            let idPersonagem = selectPersonagem ? selectPersonagem.value : null;
-            let nomeExibicao = "Aventureiro";
-
-            if (selectPersonagem && selectPersonagem.selectedIndex > 0) {
-                nomeExibicao = selectPersonagem.options[selectPersonagem.selectedIndex].text.split(' (')[0];
-            } else if (inputNome && inputNome.value.trim() !== "") {
-                nomeExibicao = inputNome.value.trim();
-            }
-
-            resultDiv.innerText = "...";
-            setTimeout(() => {
-                const roll = Math.floor(Math.random() * faces) + 1;
-                resultDiv.innerText = roll;
-                
-                if(faces === 20 && roll === 20) resultDiv.style.color = "#00ff00";
-                else if(faces === 20 && roll === 1) resultDiv.style.color = "#ff0000";
-                else resultDiv.style.color = "#ffcc00";
-
-                fetch('/lobby/api/rolagem/salvar/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        "resultado": roll, 
-                        "jogador_nome": nomeExibicao, 
-                        "tipo_dado": "D" + faces,
-                        "personagem_id": idPersonagem 
-                    })
+            fetch('/lobby/api/rolagem/salvar/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ 
+                    "resultado": roll, 
+                    "jogador_nome": nomeExibicao, 
+                    "tipo_dado": "D" + faces,
+                    "personagem_id": idPersonagem 
                 })
-                .then(response => response.json())
-                .then(data => { atualizarLog(); })
-                .catch(error => console.error('Erro ao salvar rolagem:', error));
-            }, 300);
-        }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    atualizarLog();
+                }
+            })
+            .catch(error => console.error('Erro ao salvar rolagem:', error));
+        }, 300);
+    }
 
-        function limparLogServidor() {
-            if(confirm("Deseja mesmo limpar as crônicas da taverna? Isso apagará o log visível de rolagens.")) {
-                fetch('/lobby/api/rolagem/limpar/', { method: 'POST' })
-                .then(() => atualizarLog());
-            }
+    function limparLogServidor() {
+        if(confirm("Deseja mesmo limpar as crônicas da taverna?")) {
+            fetch('/lobby/api/rolagem/limpar/', { 
+                method: 'POST', 
+                headers: {'X-CSRFToken': '{{ csrf_token }}'} 
+            })
+            .then(() => atualizarLog());
         }
+    }
 
-        // Pooling ativo de 3 segundos
-        document.addEventListener('DOMContentLoaded', () => {
-            atualizarLog();
-            setInterval(atualizarLog, 3000);
-        });
-    </script>
-</body>
-</html>
+    document.addEventListener('DOMContentLoaded', atualizarLog);
+    setInterval(atualizarLog, 5000);
+</script>
+{% endblock %}

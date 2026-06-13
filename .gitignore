@@ -115,3 +115,18 @@ cython_debug/
 .pypirc
 .cursorignore
 .cursorindexingignore
+# Arquivos locais que não devem ser commitados
+db.sqlite3
+db.sqlite3-journal
+core/local_settings.py
+staticfiles/
+microservico-pubsub/rolagens_store.json
+.env
+
+# Arquivos locais que não devem ser commitados
+db.sqlite3
+db.sqlite3-journal
+core/local_settings.py
+staticfiles/
+microservico-pubsub/rolagens_store.json
+.env

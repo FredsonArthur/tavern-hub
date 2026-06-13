@@ -12,7 +12,8 @@ from django.core.cache import cache  # --- REQUISITO (viii): Módulo de Gerencia
 from .models import Rolagem, Personagem, Mesa, Item
 from .forms import PersonagemForm, MesaForm, ItemForm
 from .messaging import publicar_rolagem
-
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 # --- REQUISITO (viii): PAINEL DE ESTATÍSTICAS (Aggregation + Cache de Baixo Nível) ---
 
@@ -43,16 +44,18 @@ def painel_estatisticas(request):
 @login_required
 def dashboard(request):
     """
-    Tela principal que lista as mesas ativas e permite as interações de rolagens.
-    🔥 CORRIGIDO: Redireciona para lobby/index.html evitando o erro TemplateDoesNotExist.
+    Tela principal. Certifique-se de que o arquivo 'index.html' 
+    está dentro de 'lobby/templates/lobby/'.
     """
     mesas = Mesa.objects.all().order_by('-data_criacao')
     personagens = Personagem.objects.filter(usuario=request.user, ativo=True)
+    
+    # O caminho 'lobby/index.html' é relativo à pasta de templates.
+    # Se o erro persistir, verifique se não há outro 'index.html' em outras pastas.x
     return render(request, 'lobby/index.html', {
         'mesas': mesas,
         'personagens': personagens
     })
-
 
 # --- REQUISITO (vi): SISTEMA DE ROLLBACK (Controle de Versão de Auditoria de Regra de Negócio) ---
 
@@ -216,16 +219,16 @@ def lista_personagens(request):
 
     # 3. Aplica os filtros progressivamente no queryset
     if busca_nome:
-        personagens = personajes.filter(nome__icontains=busca_nome)
+        personagens = personagens.filter(nome__icontains=busca_nome)
     
     if busca_classe:
-        personagens = personajes.filter(classe__iexact=busca_classe)
+        personagens = personagens.filter(classe__iexact=busca_classe)
         
     if busca_mesa:
         if busca_mesa == 'sem_mesa':
-            personagens = personajes.filter(mesa__isnull=True)
+            personagens = personagens.filter(mesa__isnull=True)
         else:
-            personagens = personajes.filter(mesa_id=busca_mesa)
+            personagens = personagens.filter(mesa_id=busca_mesa)
 
     # 4. Dados auxiliares para popular as caixas de seleção (select options) na interface
     mesas_disponiveis = Mesa.objects.all().order_by('titulo')
@@ -338,6 +341,18 @@ def gerenciar_inventario(request, pk):
 
 
 # --- REQUISITO (vii): AUTENTICAÇÃO - Criação de Contas ---
+def login_view(request):
+    """View personalizada para renderizar o template de login."""
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('dashboard')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'lobby/login.html', {'form': form})
 
 def registro(request):
     """Permite que novos aventureiros criem uma conta na taverna."""

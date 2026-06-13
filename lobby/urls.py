@@ -1,10 +1,12 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views  # Importa as views de autenticação nativas
+from django.contrib.auth.views import LogoutView
 from . import views
 
 urlpatterns = [
     # --- Rota Principal (Força o redirecionamento para o login caso não esteja autenticado) ---
     path('', views.dashboard, name='dashboard'),
+    path('login/', views.login_view, name='login'),  # ← Adicione esta linha
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),  # ← Adicione
 
     # --- AUTENTICAÇÃO: Criação de Novas Contas ---
     path('registro/', views.registro, name='registro'),

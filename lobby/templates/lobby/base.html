@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TavernHub - {% block title %}Lobby{% endblock %}</title>
+    
+    <!-- CSS Externos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Estilos globais da Taverna -->
+    <style>
+        body { background: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding-bottom: 60px; }
+        .navbar-tavern { background-color: #111111 !important; border-bottom: 2px solid #8b0000; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar Global -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-tavern mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand text-warning fw-bold fs-4" href="{% url 'dashboard' %}">
+                <i class="fas fa-dungeon"></i> TavernHub
+            </a>
+            <!-- Conteúdo da Navbar (Links de navegação aqui...) -->
+        </div>
+    </nav>
+
+    <!-- Mensagens Globais (Otimização para feedback ao usuário) -->
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Bloco principal de conteúdo das páginas -->
+    <div id="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Scripts Globais -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

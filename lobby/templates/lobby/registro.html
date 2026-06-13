@@ -1,4 +1,4 @@
-{% extends 'lobby/index.html' %}
+{% extends 'lobby/base.html' %}
 
 {% block content %}
 <div class="container mt-5 mb-5 animate__animated animate__fadeIn">
@@ -57,7 +57,8 @@
                     
                     <div class="text-center small">
                         <p class="text-muted mb-0">
-                            Já possui cadastro nas crônicas? <a href="{% url 'login' %}" class="text-warning text-decoration-none fw-bold hover-link">Faça login aqui</a>
+                            Já possui cadastro nas crônicas? 
+                            <a href="{% url 'login' %}" class="text-warning text-decoration-none fw-bold hover-link">Faça login aqui</a>
                         </p>
                     </div>
                 </div>
