@@ -17,6 +17,13 @@ urlpatterns = [
     # --- REQUISITO: SISTEMA DE ROLLBACK (Controle de Versão) ---
     path('rolagem/rollback/<int:pk>/', views.rollback_rolagem, name='rollback_rolagem'),
 
+    # Ficha do personagem
+    path('personagem/<int:pk>/', views.ficha_personagem, name='ficha_personagem'),
+
+    # APIs de cura/dano
+    path('api/personagem/<int:pk>/curar/', views.api_curar_personagem, name='api_curar_personagem'),
+    path('api/personagem/<int:pk>/dano/', views.api_dano_personagem, name='api_dano_personagem'),
+
     # --- Rotas do Sistema de Rolagem (API / Entidade 3) ---
     path('api/rolagem/salvar/', views.salvar_rolagem, name='salvar_rolagem'),
     path('api/rolagem/listar/', views.listar_rolagens, name='listar_rolagens'),

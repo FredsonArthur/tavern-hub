@@ -1,35 +1,347 @@
 {% extends 'lobby/base.html' %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card bg-dark text-white border-secondary p-4">
-                <h2 class="mb-4 text-center">{{ titulo }}</h2>
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <h2 class="mb-0">
+                        <i class="fas fa-user-plus"></i> {{ titulo|default:"Criar Personagem" }}
+                    </h2>
+                    <small class="text-light">Preencha os dados do seu herói</small>
+                </div>
                 
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                    <div class="mb-3">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.help_text %}
-                        <div class="form-text text-muted">{{ field.help_text }}</div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
                         {% endif %}
-                        {% for error in field.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">Salvar Personagem</button>
-                        <a href="{% url 'lista_personagens' %}" class="btn btn-secondary">Cancelar</a>
-                    </div>
-                </form>
+                        
+                        <!-- Separação em seções para melhor organização -->
+                        <div class="row">
+                            <!-- Coluna 1: Informações Básicas -->
+                            <div class="col-md-6">
+                                <h5 class="text-warning mb-3 border-bottom border-warning pb-2">
+                                    <i class="fas fa-info-circle"></i> Informações Básicas
+                                </h5>
+                                
+                                <!-- Mesa -->
+                                <div class="mb-3">
+                                    <label for="{{ form.mesa.id_for_label }}" class="form-label text-light fw-bold">
+                                        {{ form.mesa.label }}
+                                    </label>
+                                    {{ form.mesa }}
+                                    {% if form.mesa.errors %}
+                                        <div class="text-danger small">{{ form.mesa.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Nome -->
+                                <div class="mb-3">
+                                    <label for="{{ form.nome.id_for_label }}" class="form-label text-light fw-bold">
+                                        {{ form.nome.label }}
+                                    </label>
+                                    {{ form.nome }}
+                                    {% if form.nome.errors %}
+                                        <div class="text-danger small">{{ form.nome.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Raça - Verificação explícita -->
+                                <div class="mb-3">
+                                    <label for="{{ form.raca.id_for_label }}" class="form-label text-light fw-bold">
+                                        {{ form.raca.label }}
+                                    </label>
+                                    <select name="raca" id="{{ form.raca.id_for_label }}" class="form-select" required>
+                                        <option value="">Selecione uma raça...</option>
+                                        <option value="Humano">🧑 Humano</option>
+                                        <option value="Elfo">🧝 Elfo</option>
+                                        <option value="Anão">⛏️ Anão</option>
+                                        <option value="Halfling">🍃 Halfling</option>
+                                        <option value="Gnomo">🔧 Gnomo</option>
+                                        <option value="Tiefling">👿 Tiefling</option>
+                                        <option value="Meio-Elfo">💫 Meio-Elfo</option>
+                                        <option value="Meio-Orc">💪 Meio-Orc</option>
+                                        <option value="Dragonborn">🐉 Dragonborn</option>
+                                    </select>
+                                    {% if form.raca.errors %}
+                                        <div class="text-danger small">{{ form.raca.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Classe - Verificação explícita -->
+                                <div class="mb-3">
+                                    <label for="{{ form.classe.id_for_label }}" class="form-label text-light fw-bold">
+                                        {{ form.classe.label }}
+                                    </label>
+                                    <select name="classe" id="{{ form.classe.id_for_label }}" class="form-select" required>
+                                        <option value="">Selecione uma classe...</option>
+                                        <option value="Guerreiro">⚔️ Guerreiro</option>
+                                        <option value="Mago">🔮 Mago</option>
+                                        <option value="Ladino">🗡️ Ladino</option>
+                                        <option value="Clérigo">🙏 Clérigo</option>
+                                        <option value="Bárbaro">🪓 Bárbaro</option>
+                                        <option value="Paladino">🛡️ Paladino</option>
+                                        <option value="Druida">🌿 Druida</option>
+                                        <option value="Bardo">🎵 Bardo</option>
+                                        <option value="Feiticeiro">✨ Feiticeiro</option>
+                                        <option value="Bruxo">🔗 Bruxo</option>
+                                        <option value="Monge">🥋 Monge</option>
+                                        <option value="Ranger">🏹 Ranger</option>
+                                    </select>
+                                    {% if form.classe.errors %}
+                                        <div class="text-danger small">{{ form.classe.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Nível -->
+                                <div class="mb-3">
+                                    <label for="{{ form.nivel.id_for_label }}" class="form-label text-light fw-bold">
+                                        {{ form.nivel.label }}
+                                    </label>
+                                    {{ form.nivel }}
+                                    {% if form.nivel.errors %}
+                                        <div class="text-danger small">{{ form.nivel.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Vida Atual -->
+                                <div class="mb-3">
+                                    <label for="{{ form.vida_atual.id_for_label }}" class="form-label text-light fw-bold">
+                                        {{ form.vida_atual.label }}
+                                    </label>
+                                    {{ form.vida_atual }}
+                                    {% if form.vida_atual.help_text %}
+                                        <small class="text-muted d-block">{{ form.vida_atual.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.vida_atual.errors %}
+                                        <div class="text-danger small">{{ form.vida_atual.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Coluna 2: Atributos -->
+                            <div class="col-md-6">
+                                <h5 class="text-warning mb-3 border-bottom border-warning pb-2">
+                                    <i class="fas fa-chart-line"></i> Atributos (Valores de 1 a 30)
+                                </h5>
+                                
+                                <!-- Força -->
+                                <div class="mb-3">
+                                    <label for="{{ form.forca.id_for_label }}" class="form-label text-light fw-bold">
+                                        💪 {{ form.forca.label }}
+                                    </label>
+                                    {{ form.forca }}
+                                    <small class="text-muted d-block">Modificador: <span id="mod_forca">0</span></small>
+                                    {% if form.forca.errors %}
+                                        <div class="text-danger small">{{ form.forca.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Destreza -->
+                                <div class="mb-3">
+                                    <label for="{{ form.destreza.id_for_label }}" class="form-label text-light fw-bold">
+                                        🏃 {{ form.destreza.label }}
+                                    </label>
+                                    {{ form.destreza }}
+                                    <small class="text-muted d-block">Modificador: <span id="mod_destreza">0</span></small>
+                                    {% if form.destreza.errors %}
+                                        <div class="text-danger small">{{ form.destreza.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Constituição -->
+                                <div class="mb-3">
+                                    <label for="{{ form.constituicao.id_for_label }}" class="form-label text-light fw-bold">
+                                        ❤️ {{ form.constituicao.label }}
+                                    </label>
+                                    {{ form.constituicao }}
+                                    <small class="text-muted d-block">Modificador: <span id="mod_constituicao">0</span></small>
+                                    {% if form.constituicao.errors %}
+                                        <div class="text-danger small">{{ form.constituicao.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Inteligência -->
+                                <div class="mb-3">
+                                    <label for="{{ form.inteligencia.id_for_label }}" class="form-label text-light fw-bold">
+                                        🧠 {{ form.inteligencia.label }}
+                                    </label>
+                                    {{ form.inteligencia }}
+                                    <small class="text-muted d-block">Modificador: <span id="mod_inteligencia">0</span></small>
+                                    {% if form.inteligencia.errors %}
+                                        <div class="text-danger small">{{ form.inteligencia.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Sabedoria -->
+                                <div class="mb-3">
+                                    <label for="{{ form.sabedoria.id_for_label }}" class="form-label text-light fw-bold">
+                                        🕯️ {{ form.sabedoria.label }}
+                                    </label>
+                                    {{ form.sabedoria }}
+                                    <small class="text-muted d-block">Modificador: <span id="mod_sabedoria">0</span></small>
+                                    {% if form.sabedoria.errors %}
+                                        <div class="text-danger small">{{ form.sabedoria.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Carisma -->
+                                <div class="mb-3">
+                                    <label for="{{ form.carisma.id_for_label }}" class="form-label text-light fw-bold">
+                                        🎭 {{ form.carisma.label }}
+                                    </label>
+                                    {{ form.carisma }}
+                                    <small class="text-muted d-block">Modificador: <span id="mod_carisma">0</span></small>
+                                    {% if form.carisma.errors %}
+                                        <div class="text-danger small">{{ form.carisma.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- História (Full Width) -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3 border-bottom border-warning pb-2 mt-3">
+                                    <i class="fas fa-scroll"></i> História
+                                </h5>
+                                <div class="mb-3">
+                                    {{ form.historia }}
+                                    {% if form.historia.errors %}
+                                        <div class="text-danger small">{{ form.historia.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between gap-3 mt-4">
+                            <a href="{% url 'lista_personagens' %}" class="btn btn-outline-secondary flex-grow-1">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger flex-grow-1">
+                                <i class="fas fa-save"></i> Salvar Personagem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Dica para iniciantes -->
+            <div class="alert alert-secondary mt-3 text-center">
+                <i class="fas fa-info-circle"></i>
+                <small>Os valores de atributos padrão são 10. Quanto maior o valor, maior o modificador!</small>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Estilo para os selects e inputs */
+    select, input[type="text"], input[type="number"], textarea {
+        background-color: #2a2a2a !important;
+        color: #ffffff !important;
+        border: 1px solid #555 !important;
+        border-radius: 6px !important;
+        padding: 8px 12px !important;
+        width: 100% !important;
+    }
+    
+    select:focus, input:focus, textarea:focus {
+        border-color: #ffcc00 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+    }
+    
+    select option {
+        background-color: #2a2a2a !important;
+        color: #ffffff !important;
+    }
+    
+    input[type="number"]::-webkit-inner-spin-button, 
+    input[type="number"]::-webkit-outer-spin-button {
+        opacity: 0.5;
+    }
+    
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+</style>
+
+<script>
+    // Função para calcular modificador
+    function calcularModificador(valor) {
+        return Math.floor((valor - 10) / 2);
+    }
+    
+    // Atualizar todos os modificadores
+    function atualizarModificadores() {
+        const forca = parseInt(document.querySelector('input[name="forca"]')?.value) || 10;
+        const destreza = parseInt(document.querySelector('input[name="destreza"]')?.value) || 10;
+        const constituicao = parseInt(document.querySelector('input[name="constituicao"]')?.value) || 10;
+        const inteligencia = parseInt(document.querySelector('input[name="inteligencia"]')?.value) || 10;
+        const sabedoria = parseInt(document.querySelector('input[name="sabedoria"]')?.value) || 10;
+        const carisma = parseInt(document.querySelector('input[name="carisma"]')?.value) || 10;
+        
+        document.getElementById('mod_forca').textContent = calcularModificador(forca);
+        document.getElementById('mod_destreza').textContent = calcularModificador(destreza);
+        document.getElementById('mod_constituicao').textContent = calcularModificador(constituicao);
+        document.getElementById('mod_inteligencia').textContent = calcularModificador(inteligencia);
+        document.getElementById('mod_sabedoria').textContent = calcularModificador(sabedoria);
+        document.getElementById('mod_carisma').textContent = calcularModificador(carisma);
+        
+        // Atualizar vida
+        calcularVidaAutomatica();
+    }
+    
+    // Calcular vida automaticamente
+    function calcularVidaAutomatica() {
+        const nivelInput = document.querySelector('input[name="nivel"]');
+        const constituicaoInput = document.querySelector('input[name="constituicao"]');
+        const vidaAtualInput = document.querySelector('input[name="vida_atual"]');
+        
+        if (vidaAtualInput && (vidaAtualInput.value === '' || vidaAtualInput.value === '0')) {
+            const nivel = parseInt(nivelInput?.value) || 1;
+            const constituicao = parseInt(constituicaoInput?.value) || 10;
+            const modConstituicao = calcularModificador(constituicao);
+            const vidaCalculada = (8 + modConstituicao) * nivel;
+            
+            if (vidaCalculada > 0) {
+                vidaAtualInput.value = vidaCalculada;
+                vidaAtualInput.style.backgroundColor = '#1a3a1a';
+                setTimeout(() => {
+                    vidaAtualInput.style.backgroundColor = '';
+                }, 500);
+            }
+        }
+    }
+    
+    // Adicionar event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const atributos = ['forca', 'destreza', 'constituicao', 'inteligencia', 'sabedoria', 'carisma'];
+        
+        atributos.forEach(atributo => {
+            const input = document.querySelector(`input[name="${atributo}"]`);
+            if (input) {
+                input.addEventListener('input', atualizarModificadores);
+            }
+        });
+        
+        const nivelInput = document.querySelector('input[name="nivel"]');
+        if (nivelInput) {
+            nivelInput.addEventListener('change', calcularVidaAutomatica);
+        }
+        
+        atualizarModificadores();
+    });
+</script>
 {% endblock %}

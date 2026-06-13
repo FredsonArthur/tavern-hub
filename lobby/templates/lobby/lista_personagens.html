@@ -2,26 +2,41 @@
 
 {% block content %}
 <div class="container mt-4">
+    <!-- Cabeçalho -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 style="color: #ffcc00;">👥 Meus Personagens</h2>
-        <a href="{% url 'criar_personagem' %}" class="btn btn-success">➕ Novo Herói</a>
+        <div>
+            <h2 class="text-warning mb-0">
+                <i class="fas fa-users"></i> Meus Personagens
+            </h2>
+            <p class="text-muted small mt-1">Gerencie seus heróis e aventureiros</p>
+        </div>
+        <a href="{% url 'criar_personagem' %}" class="btn btn-danger btn-lg shadow">
+            <i class="fas fa-plus-circle"></i> Novo Herói
+        </a>
     </div>
 
-    <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
-        <div class="card-header border-secondary" style="background-color: #1a1a1a;">
-            <h5 class="mb-0 text-warning">🔮 Mecanismo de Busca e Filtragem</h5>
+    <!-- Filtros -->
+    <div class="card bg-dark text-white border-secondary mb-4 shadow-lg">
+        <div class="card-header border-secondary" style="background-color: #1a1a1a; border-bottom: 2px solid #8b0000;">
+            <h5 class="mb-0 text-warning">
+                <i class="fas fa-search"></i> Mecanismo de Busca e Filtragem
+            </h5>
         </div>
         <div class="card-body">
             <form method="GET" action="{% url 'lista_personagens' %}" class="row g-3">
                 <div class="col-md-4">
-                    <label for="nome" class="form-label font-monospace" style="font-size: 0.85rem;">Nome do Herói</label>
-                    <input type="text" name="nome" id="nome" class="form-control bg-secondary text-white border-dark" 
-                           placeholder="Ex: Arthas..." value="{{ filtros.nome }}">
+                    <label for="nome" class="form-label text-warning small fw-bold">
+                        <i class="fas fa-font"></i> Nome do Herói
+                    </label>
+                    <input type="text" name="nome" id="nome" class="form-control bg-dark text-white border-secondary" 
+                           placeholder="Ex: Arthas, Merlin, Legolas..." value="{{ filtros.nome }}">
                 </div>
 
                 <div class="col-md-3">
-                    <label for="classe" class="form-label font-monospace" style="font-size: 0.85rem;">Classe</label>
-                    <select name="classe" id="classe" class="form-select bg-secondary text-white border-dark">
+                    <label for="classe" class="form-label text-warning small fw-bold">
+                        <i class="fas fa-shield-alt"></i> Classe
+                    </label>
+                    <select name="classe" id="classe" class="form-select bg-dark text-white border-secondary">
                         <option value="">Todas as Classes</option>
                         {% for classe in classes_disponiveis %}
                             <option value="{{ classe }}" {% if filtros.classe == classe %}selected{% endif %}>{{ classe }}</option>
@@ -30,8 +45,10 @@
                 </div>
 
                 <div class="col-md-3">
-                    <label for="mesa" class="form-label font-monospace" style="font-size: 0.85rem;">Mesa Vinculada</label>
-                    <select name="mesa" id="mesa" class="form-select bg-secondary text-white border-dark">
+                    <label for="mesa" class="form-label text-warning small fw-bold">
+                        <i class="fas fa-dragon"></i> Mesa Vinculada
+                    </label>
+                    <select name="mesa" id="mesa" class="form-select bg-dark text-white border-secondary">
                         <option value="">Todas as Mesas</option>
                         <option value="sem_mesa" {% if filtros.mesa == 'sem_mesa' %}selected{% endif %}>❌ Sem Mesa Cadastrada</option>
                         {% for mesa in mesas_disponiveis %}
@@ -41,68 +58,195 @@
                 </div>
 
                 <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-warning w-100 text-dark fw-bold">Filtrar</button>
-                    <a href="{% url 'lista_personagens' %}" class="btn btn-outline-secondary w-100" title="Limpar Filtros">🧹</a>
+                    <button type="submit" class="btn btn-warning w-100 text-dark fw-bold shadow-sm">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'lista_personagens' %}" class="btn btn-outline-secondary w-100" title="Limpar Filtros">
+                        <i class="fas fa-eraser"></i>
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Lista de Personagens -->
     <div class="row">
         {% for personagem in personagens %}
-            <div class="col-md-4 mb-4">
-                <div class="card bg-dark text-white border-secondary h-100 shadow-sm">
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card bg-dark text-white border-secondary h-100 shadow-lg hover-card">
+                    <!-- Cabeçalho do Card com Classe e Raça -->
+                    <div class="card-header bg-danger bg-opacity-25 border-secondary text-center py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-dark text-warning">
+                                <i class="fas fa-tag"></i> Nv. {{ personagem.nivel }}
+                            </span>
+                            <span class="badge bg-dark text-info">
+                                <i class="fas fa-helmet-battle"></i> {{ personagem.classe }}
+                            </span>
+                            <span class="badge bg-dark text-success">
+                                <i class="fas fa-dragon"></i> {{ personagem.raca }}
+                            </span>
+                        </div>
+                    </div>
+                    
                     <div class="card-body text-center">
-                        <h4 class="card-title" style="color: #8b0000;">{{ personagem.nome }}</h4>
-                        <p class="badge bg-secondary">{{ personagem.raca }} {{ personagem.classe }}</p>
-                        <p class="mb-1"><strong>Nível:</strong> {{ personagem.nivel }}</p>
-                        <p class="mb-3"><strong>Mesa:</strong> {{ personagem.mesa.titulo|default:"Sem Mesa" }}</p>
+                        <!-- Ícone do Personagem -->
+                        <div class="character-icon mb-3">
+                            <i class="fas fa-user-circle fa-4x text-warning"></i>
+                        </div>
                         
-                        <div class="d-grid gap-2">
+                        <!-- Nome -->
+                        <h4 class="card-title text-danger mb-2">{{ personagem.nome }}</h4>
+                        
+                        <!-- Status de Vida -->
+                        <div class="mb-3">
+                            <div class="progress" style="height: 8px;">
+                                {% widthratio personagem.vida_atual personagem.vida_maxima 100 as vida_percent %}
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {% if vida_percent > 0 %}{{ vida_percent }}{% else %}0{% endif %}%;">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-heart text-danger"></i> {{ personagem.vida_atual }}/{{ personagem.vida_maxima }} PV
+                            </small>
+                        </div>
+                        
+                        <!-- Informações da Mesa -->
+                        <p class="mb-3">
+                            {% if personagem.mesa %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-dragon"></i> {{ personagem.mesa.titulo }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-dark text-muted">
+                                    <i class="fas fa-ban"></i> Sem Mesa
+                                </span>
+                            {% endif %}
+                        </p>
+                        
+                        <!-- Botões de Ação -->
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'ficha_personagem' personagem.id %}" class="btn btn-info btn-sm">
+                                <i class="fas fa-id-card"></i> Ver Ficha Completa
+                            </a>
                             <a href="{% url 'gerenciar_inventario' personagem.id %}" class="btn btn-warning btn-sm text-dark fw-bold">
-                                🎒 Gerenciar Inventário
+                                <i class="fas fa-box"></i> Gerenciar Inventário
                             </a>
                             
-                            <div class="btn-group mt-2">
-                                <a href="{% url 'editar_personagem' personagem.id %}\" class="btn btn-outline-primary btn-sm">Editar</a>
-                                <a href="{% url 'excluir_personagem' personagem.id %}" class="btn btn-outline-danger btn-sm">Arquivar</a>
+                            <div class="btn-group mt-2" role="group">
+                                <a href="{% url 'editar_personagem' personagem.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="{% url 'excluir_personagem' personagem.id %}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash-alt"></i> Arquivar
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer text-muted font-monospace" style="font-size: 0.7rem;">
-                        ID: #{{ personagem.id }} | Status: Ativo
+                    
+                    <div class="card-footer text-muted text-center font-monospace" style="font-size: 0.7rem;">
+                        <i class="fas fa-id-card"></i> ID: #{{ personagem.id }} | 
+                        <i class="fas fa-calendar-alt"></i> Criado: {{ personagem.usuario.username }}
                     </div>
                 </div>
             </div>
         {% empty %}
-            <div class="col-12 text-center py-5">
-                <p class="text-muted fs-4">Nenhum herói encontrado com os filtros aplicados.</p>
-                <a href="{% url 'lista_personagens' %}" class="btn btn-md btn-outline-warning mt-2">Limpar Busca</a>
+            <div class="col-12">
+                <div class="card bg-dark text-white border-secondary text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-ghost fa-4x text-muted mb-3"></i>
+                        <p class="text-muted fs-4">Nenhum herói encontrado com os filtros aplicados.</p>
+                        <p class="text-secondary">Crie seu primeiro personagem para começar a aventura!</p>
+                        <a href="{% url 'criar_personagem' %}" class="btn btn-danger mt-3">
+                            <i class="fas fa-plus-circle"></i> Criar Personagem
+                        </a>
+                    </div>
+                </div>
             </div>
         {% endfor %}
     </div>
     
+    <!-- Botão Voltar -->
     <div class="text-center mt-4">
-        <a href="{% url 'dashboard' %}" class="btn btn-link text-secondary">⬅️ Voltar ao Dashboard</a>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+        </a>
     </div>
 </div>
 
 <style>
-    .card { transition: transform 0.2s, border-color 0.2s; }
-    .card:hover { 
-        transform: translateY(-5px); 
-        border-color: #ffcc00 !important; 
-        box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2) !important;
+    /* Cards com efeito hover */
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .btn-warning:hover { background-color: #ffcc00; }
     
-    /* Ajustes finos nos inputs do formulário para combinar com o tema escuro */
-    .form-control::placeholder { color: #aaaaaa; }
-    .form-control:focus, .form-select:focus {
-        background-color: #444444 !important;
-        color: #fff !important;
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(139, 0, 0, 0.3) !important;
         border-color: #ffcc00 !important;
-        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.25) !important;
+    }
+    
+    /* Estilização dos inputs */
+    .form-control, .form-select {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+        border: 1px solid #444 !important;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #ffcc00 !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+        background-color: #2a2a2a !important;
+    }
+    
+    .form-control::placeholder {
+        color: #666 !important;
+    }
+    
+    /* Progress bar personalizada */
+    .progress {
+        background-color: #2a2a2a;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+    
+    /* Botões */
+    .btn-group .btn {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-group .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Ícone do personagem */
+    .character-icon {
+        transition: transform 0.2s ease;
+    }
+    
+    .hover-card:hover .character-icon {
+        transform: scale(1.05);
+    }
+    
+    /* Animações suaves */
+    .card {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 {% endblock %}

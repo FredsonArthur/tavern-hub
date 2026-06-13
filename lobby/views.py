@@ -261,8 +261,9 @@ def criar_personagem(request):
             return redirect('lista_personagens')
     else:
         form = PersonagemForm()
-    return render(request, 'lobby/form_personagem.html', {'form': form})
-
+    
+    # Adicione esta linha para passar o título
+    return render(request, 'lobby/form_personagem.html', {'form': form, 'titulo': 'Criar Novo Personagem'})
 
 @login_required
 def editar_personagem(request, pk):
@@ -366,3 +367,58 @@ def registro(request):
     else:
         form = UserCreationForm()
     return render(request, 'lobby/registro.html', {'form': form})
+
+# lobby/views.py - Adicione estas novas views
+
+@login_required
+def ficha_personagem(request, pk):
+    """Exibe a ficha completa do personagem com todos os atributos"""
+    personagem = get_object_or_404(Personagem, pk=pk, usuario=request.user, ativo=True)
+    modificadores = personagem.get_modificadores()
+    
+    # Calcula bônus de proficiência (baseado no nível)
+    proficiencia = 2 + (personagem.nivel - 1) // 4
+    
+    context = {
+        'p': personagem,
+        'mod': modificadores,
+        'proficiencia': proficiencia,
+        'pv_percent': (personagem.vida_atual / personagem.vida_maxima * 100) if personagem.vida_maxima > 0 else 0,
+    }
+    return render(request, 'lobby/ficha_personagem.html', context)
+
+
+@login_required
+def api_curar_personagem(request, pk):
+    """API para curar personagem (uso do mestre)"""
+    if request.method == "POST":
+        personagem = get_object_or_404(Personagem, pk=pk)
+        quantidade = int(request.POST.get('quantidade', 0))
+        
+        curado = personagem.curar(quantidade)
+        
+        return JsonResponse({
+            'status': 'sucesso',
+            'curado': curado,
+            'vida_atual': personagem.vida_atual,
+            'vida_maxima': personagem.vida_maxima
+        })
+    return JsonResponse({'status': 'erro'}, status=400)
+
+
+@login_required
+def api_dano_personagem(request, pk):
+    """API para aplicar dano no personagem"""
+    if request.method == "POST":
+        personagem = get_object_or_404(Personagem, pk=pk)
+        quantidade = int(request.POST.get('quantidade', 0))
+        
+        resultado = personagem.tomar_dano(quantidade)
+        
+        return JsonResponse({
+            'status': 'sucesso',
+            'dano': resultado['dano'],
+            'morreu': resultado['morreu'],
+            'vida_atual': resultado['vida_restante']
+        })
+    return JsonResponse({'status': 'erro'}, status=400)

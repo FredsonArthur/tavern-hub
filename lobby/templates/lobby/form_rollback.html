@@ -1,91 +1,394 @@
 {% extends 'lobby/base.html' %}
 
+{% block title %}Decreto do Mestre - Rollback{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5 animate__animated animate__fadeIn">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card shadow-lg border-0 bg-dark text-white" style="border-radius: 10px;">
-                <div class="card-header text-center border-0 p-4" style="background-color: #111111; border-bottom: 2px solid #8b0000 !important; border-top-left-radius: 10px; border-top-right-radius: 10px;">
-                    <h3 class="mb-0 text-danger" style="font-family: 'Georgia', serif; letter-spacing: 1px;">
-                        <i class="fas fa-clock-rotate-left"></i> Decreto do Mestre (Rollback)
-                    </h3>
-                    <small class="text-muted">Altere ou corrija o resultado de uma rolagem de dados para fins de auditoria histórica</small>
+            <div class="card bg-dark text-white border-danger shadow-lg">
+                <!-- Cabeçalho dramático -->
+                <div class="card-header bg-danger text-white text-center py-4" style="background: linear-gradient(135deg, #8b0000, #3a0000);">
+                    <div class="dragon-eye mb-2">
+                        <i class="fas fa-clock-rotate-left fa-3x animate__animated animate__pulse animate__infinite"></i>
+                    </div>
+                    <h2 class="mb-0 fw-bold" style="font-family: 'Cinzel', 'Georgia', serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                        <i class="fas fa-gavel"></i> DECRETO DO MESTRE
+                    </h2>
+                    <small class="text-light">Altere o destino dos dados - Ação irreversível</small>
                 </div>
 
-                <div class="card-body p-4 bg-secondary bg-opacity-10 text-start">
+                <div class="card-body p-4">
+                    <!-- Aviso de Segurança -->
+                    <div class="alert alert-danger bg-opacity-25 border-danger text-center mb-4">
+                        <i class="fas fa-skull-crossbones fa-2x mb-2 d-block"></i>
+                        <strong>⚠️ AVISO DE SEGURANÇA ⚠️</strong>
+                        <hr class="border-danger">
+                        <small>Esta ação afetará a auditoria do jogo e deixará um registro permanente nas crônicas da taverna.</small>
+                    </div>
                     
-                    <div class="p-3 mb-4 rounded border border-secondary bg-dark bg-opacity-50">
-                        <p class="mb-2 text-muted">
-                            <i class="fas fa-user-shield text-warning"></i> Jogador/Herói: 
-                            <strong class="text-warning">{{ rolagem.personagem.nome|default:rolagem.jogador_nome }}</strong>
-                        </p>
-                        <p class="mb-2 text-muted">
-                            <i class="fas fa-dice-d20 text-info"></i> Artefato Utilizado: 
-                            <span class="badge bg-secondary px-2 py-1 fw-bold">{{ rolagem.tipo_dado }}</span>
-                        </p>
-                        <p class="mb-0 text-muted">
-                            <i class="fas fa-circle-xmark text-danger"></i> Valor Registrado Originalmente: 
-                            <span class="text-light fw-bold fs-5" style="text-decoration: line-through; opacity: 0.7;">{{ rolagem.resultado }}</span>
-                        </p>
+                    <!-- Informações da Rolagem Original -->
+                    <div class="card bg-secondary bg-opacity-25 border-danger mb-4">
+                        <div class="card-body">
+                            <h6 class="text-danger mb-3 text-center">
+                                <i class="fas fa-scroll"></i> ROLAGEM ORIGINAL
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="original-value">
+                                        <small class="text-muted d-block">Jogador</small>
+                                        <strong class="text-warning">
+                                            <i class="fas fa-user-circle"></i> {{ rolagem.personagem.nome|default:rolagem.jogador_nome }}
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="original-value">
+                                        <small class="text-muted d-block">Dado</small>
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="fas fa-dice-d20"></i> {{ rolagem.tipo_dado }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="original-value">
+                                        <small class="text-muted d-block">Resultado</small>
+                                        <div class="old-result">
+                                            <span class="text-muted" style="text-decoration: line-through;">{{ rolagem.resultado }}</span>
+                                            <i class="fas fa-arrow-right text-warning mx-1"></i>
+                                            <span class="text-danger fw-bold fs-4" id="novo-valor-preview">?</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if rolagem.personagem.mesa %}
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-dragon"></i> Mesa: {{ rolagem.personagem.mesa.titulo }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
 
-                    <form method="POST" novalidate>
+                    <form method="POST" novalidate id="rollback-form">
                         {% csrf_token %}
                         
+                        <!-- Novo Resultado com preview -->
                         <div class="mb-4">
-                            <label for="id_novo_resultado" class="form-label text-warning small fw-bold">
-                                <i class="fas fa-dice"></i> Novo Resultado Correto:
+                            <label for="id_novo_resultado" class="form-label text-warning fw-bold">
+                                <i class="fas fa-dice-d20"></i> Novo Resultado Correto:
                             </label>
-                            <input type="number" id="id_novo_resultado" name="novo_resultado" class="form-control form-control-lg text-center text-warning fw-bold bg-dark border-secondary" placeholder="Ex: 20" required style="font-size: 1.5rem;">
+                            <div class="input-group">
+                                <span class="input-group-text bg-danger border-danger text-white">
+                                    <i class="fas fa-magic"></i>
+                                </span>
+                                <input type="number" id="id_novo_resultado" name="novo_resultado" 
+                                       class="form-control form-control-lg text-center text-warning fw-bold" 
+                                       placeholder="Ex: 20" required min="1" max="20">
+                            </div>
+                            <div class="dice-suggestion mt-2">
+                                <small class="text-muted">Sugestões: 
+                                    <span class="suggestion-badge" data-value="20">🎉 20 (Crítico)</span>
+                                    <span class="suggestion-badge" data-value="1">💀 1 (Falha)</span>
+                                    <span class="suggestion-badge" data-value="15">✅ 15 (Sucesso)</span>
+                                </small>
+                            </div>
                         </div>
 
+                        <!-- Motivo da Retificação -->
                         <div class="mb-4">
-                            <label for="id_motivo" class="form-label text-warning small fw-bold">
+                            <label for="id_motivo" class="form-label text-warning fw-bold">
                                 <i class="fas fa-pen-fancy"></i> Razão da Retificação (Livro de Auditoria):
                             </label>
-                            <input type="text" id="id_motivo" name="motivo" class="form-control bg-dark border-secondary" placeholder="Ex: Esquecimento de bônus / Erro do jogador" required>
+                            <div class="input-group">
+                                <span class="input-group-text bg-danger border-danger text-white">
+                                    <i class="fas fa-book"></i>
+                                </span>
+                                <input type="text" id="id_motivo" name="motivo" 
+                                       class="form-control" 
+                                       placeholder="Ex: Esquecimento de bônus de proficiência / Erro de digitação" required>
+                            </div>
+                        </div>
+
+                        <!-- Efeito Visual da Mudança -->
+                        <div class="card bg-dark border-warning mb-4">
+                            <div class="card-body text-center">
+                                <h6 class="text-warning mb-2">
+                                    <i class="fas fa-chart-line"></i> Impacto da Mudança
+                                </h6>
+                                <div class="impact-visual">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="text-center">
+                                            <small class="text-muted">Antes</small>
+                                            <div class="before-value bg-secondary rounded p-2 mt-1">
+                                                <span id="valor-before">{{ rolagem.resultado }}</span>
+                                            </div>
+                                        </div>
+                                        <i class="fas fa-arrow-right fa-2x text-warning mx-3"></i>
+                                        <div class="text-center">
+                                            <small class="text-muted">Depois</small>
+                                            <div class="after-value bg-danger rounded p-2 mt-1">
+                                                <span id="valor-after">?</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="impact-message" class="small text-muted mt-3">
+                                        Selecione um novo valor
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <hr class="border-secondary my-4">
 
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'dashboard' %}" class="btn btn-outline-light px-4 transition-btn">
-                                <i class="fas fa-xmark"></i> Cancelar
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between gap-3">
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary flex-grow-1 py-2 transition-btn">
+                                <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger btn-lg fw-bold px-4 shadow-sm" style="background-color: #8b0000; border-color: #555;">
+                            <button type="submit" class="btn btn-danger flex-grow-1 py-2 transition-btn" id="submit-btn">
                                 <i class="fas fa-check-double"></i> Aplicar Correção
                             </button>
                         </div>
                     </form>
+                    
+                    <!-- Nota de Segurança -->
+                    <div class="alert alert-dark mt-4 small text-center">
+                        <i class="fas fa-shield-halved text-danger"></i>
+                        <strong>Nota de Segurança:</strong> Esta ação deixará uma marca indelével de 
+                        <span class="text-warning">"Corrigido por Mestre"</span> nas crônicas da taverna.
+                    </div>
                 </div>
-            </div>
-            
-            <div class="text-center mt-3 text-muted small">
-                <i class="fas fa-scroll text-danger"></i> **Nota de Segurança:** Esta ação deixará uma marca indelével de `(Corrigido por Mestre)` nas crônicas e logs em tempo real da Taverna.
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* Injeção de comportamento visual nos inputs de controle */
+    /* Inputs estilizados */
     .form-control {
-        background-color: #111111 !important;
+        background-color: #2a2a2a !important;
         color: #ffffff !important;
-        border: 1px solid #444444 !important;
-        transition: 0.2s ease-in-out;
+        border: 1px solid #555 !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        transition: all 0.2s ease;
     }
+    
     .form-control:focus {
-        background-color: #151515 !important;
-        color: #ffffff !important;
-        border-color: #8b0000 !important;
-        box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25) !important;
+        border-color: #ffcc00 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+        background-color: #1a1a1a !important;
+        transform: translateY(-2px);
     }
+    
+    .input-group-text {
+        border-radius: 8px 0 0 8px !important;
+    }
+    
+    /* Sugestões */
+    .dice-suggestion {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .suggestion-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #2a2a2a;
+        border: 1px solid #8b0000;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .suggestion-badge:hover {
+        background: #8b0000;
+        transform: translateY(-2px);
+        border-color: #ffcc00;
+    }
+    
+    /* Impacto Visual */
+    .before-value, .after-value {
+        min-width: 70px;
+        transition: all 0.3s ease;
+    }
+    
+    .after-value {
+        animation: pulse-red 0.5s ease-out;
+    }
+    
+    @keyframes pulse-red {
+        0% { transform: scale(1); background: #8b0000; }
+        50% { transform: scale(1.1); background: #ff0000; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+        100% { transform: scale(1); background: #8b0000; }
+    }
+    
+    /* Animação do olho do dragão */
+    .dragon-eye {
+        animation: eyeGlow 2s ease-in-out infinite;
+        display: inline-block;
+    }
+    
+    @keyframes eyeGlow {
+        0%, 100% { text-shadow: 0 0 0 rgba(255, 0, 0, 0); transform: scale(1); }
+        50% { text-shadow: 0 0 10px rgba(255, 0, 0, 0.5); transform: scale(1.05); }
+    }
+    
+    /* Botão de submit */
     .transition-btn {
-        transition: transform 0.2s;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        font-weight: 600;
     }
+    
     .transition-btn:hover {
-        transform: translateX(-3px);
+        transform: translateY(-2px);
+        filter: brightness(1.05);
+    }
+    
+    /* Animação de fadeIn */
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Valor antigo */
+    .old-result {
+        font-size: 1.2rem;
+    }
+    
+    /* Badge de dado */
+    .badge.bg-danger {
+        font-size: 0.9rem;
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const novoResultadoInput = document.getElementById('id_novo_resultado');
+        const valorAfterSpan = document.getElementById('valor-after');
+        const valorBeforeSpan = document.getElementById('valor-before');
+        const impactMessage = document.getElementById('impact-message');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        const valorOriginal = {{ rolagem.resultado }};
+        
+        function calcularImpacto(novoValor) {
+            if (!novoValor) {
+                valorAfterSpan.textContent = '?';
+                impactMessage.innerHTML = '<i class="fas fa-info-circle"></i> Selecione um novo valor';
+                return;
+            }
+            
+            const diff = novoValor - valorOriginal;
+            valorAfterSpan.textContent = novoValor;
+            
+            // Animação
+            const afterDiv = document.querySelector('.after-value');
+            afterDiv.classList.remove('animate__animated', 'animate__pulse');
+            void afterDiv.offsetWidth; // Força reflow
+            afterDiv.classList.add('animate__animated', 'animate__pulse');
+            
+            // Mensagem de impacto
+            if (diff > 0) {
+                impactMessage.innerHTML = `<i class="fas fa-arrow-up text-success"></i> Aumento de +${diff} pontos! O destino foi alterado a favor do jogador.`;
+                impactMessage.className = 'small text-success mt-3';
+            } else if (diff < 0) {
+                impactMessage.innerHTML = `<i class="fas fa-arrow-down text-danger"></i> Redução de ${diff} pontos! O Mestre decidiu tornar o desafio mais difícil.`;
+                impactMessage.className = 'small text-danger mt-3';
+            } else {
+                impactMessage.innerHTML = `<i class="fas fa-minus-circle text-warning"></i> Nenhuma mudança. O resultado permanece o mesmo.`;
+                impactMessage.className = 'small text-warning mt-3';
+            }
+            
+            // Efeito visual no botão
+            if (diff !== 0) {
+                submitBtn.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    submitBtn.style.transform = '';
+                }, 200);
+            }
+        }
+        
+        // Sugestões clicáveis
+        document.querySelectorAll('.suggestion-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                const value = parseInt(this.dataset.value);
+                if (novoResultadoInput) {
+                    novoResultadoInput.value = value;
+                    calcularImpacto(value);
+                    
+                    // Feedback visual
+                    this.style.background = '#8b0000';
+                    setTimeout(() => {
+                        this.style.background = '#2a2a2a';
+                    }, 200);
+                }
+            });
+        });
+        
+        // Input manual
+        if (novoResultadoInput) {
+            novoResultadoInput.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                if (!isNaN(value) && value >= 1 && value <= 20) {
+                    calcularImpacto(value);
+                } else if (this.value === '') {
+                    valorAfterSpan.textContent = '?';
+                    impactMessage.innerHTML = '<i class="fas fa-info-circle"></i> Selecione um novo valor entre 1 e 20';
+                }
+            });
+        }
+        
+        // Validação do formulário
+        const form = document.getElementById('rollback-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const motivo = document.getElementById('id_motivo').value.trim();
+                const novoResultado = parseInt(novoResultadoInput?.value);
+                
+                if (!motivo) {
+                    e.preventDefault();
+                    alert('⚠️ Você precisa informar o motivo da correção para manter a auditoria!');
+                    return false;
+                }
+                
+                if (isNaN(novoResultado) || novoResultado < 1 || novoResultado > 20) {
+                    e.preventDefault();
+                    alert('⚠️ Informe um valor válido entre 1 e 20!');
+                    return false;
+                }
+                
+                if (novoResultado === valorOriginal) {
+                    if (!confirm('O novo resultado é igual ao original. Deseja mesmo aplicar esta correção?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+                
+                const confirmMsg = `⚠️ ATENÇÃO MESTRE!\n\nDeseja realmente alterar o resultado de ${valorOriginal} para ${novoResultado}?\nMotivo: "${motivo}"\n\nEsta ação ficará registrada na auditoria.`;
+                
+                if (!confirm(confirmMsg)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

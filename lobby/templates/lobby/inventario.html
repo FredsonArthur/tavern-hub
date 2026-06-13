@@ -1,89 +1,364 @@
 {% extends 'lobby/base.html' %}
 
+{% block title %}Inventário de {{ personagem.nome }}{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-4 mb-5">
     {% if messages %}
-        <div class="messages-container">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        </div>
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                <i class="fas fa-info-circle"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
     {% endif %}
 
-    <div class="inventory-card bg-dark text-white p-4 rounded border border-secondary shadow-lg">
-        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-danger pb-3">
-            <h2 class="mb-0">🎒 Inventário de <span class="text-warning">{{ personagem.nome }}</span></h2>
-            <a href="{% url 'lista_personagens' %}" class="btn btn-outline-light btn-sm">
-                <i class="fas fa-chevron-left"></i> Voltar
-            </a>
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning mb-0" style="font-family: 'Cinzel', 'Georgia', serif;">
+                <i class="fas fa-backpack"></i> Inventário de {{ personagem.nome }}
+            </h2>
+            <p class="text-muted small mt-1">Gerencie os equipamentos e tesouros do seu herói</p>
         </div>
+        <a href="{% url 'ficha_personagem' personagem.id %}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left"></i> Voltar à Ficha
+        </a>
+    </div>
 
-        <div class="card bg-secondary bg-opacity-10 border-warning mb-5">
-            <div class="card-body">
-                <h5 class="card-title text-warning mb-3">Encontrar novo item na taverna</h5>
-                <form method="POST" class="row g-3">
-                    {% csrf_token %}
-                    <div class="col-md-9">
-                        <select name="item_id" id="item_id" class="form-select bg-dark text-white border-secondary" required>
-                            <option value="">Selecione um item da biblioteca...</option>
-                            {% for item in itens %}
-                                <option value="{{ item.id }}">{{ item.nome }} - {{ item.raridade }} ({{ item.peso }}kg)</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-danger w-100">
-                            <i class="fas fa-plus-circle"></i> Equipar Item
+    <div class="row">
+        <!-- Adicionar Item - Card Aprimorado -->
+        <div class="col-md-5 mb-4">
+            <div class="card bg-dark text-white border-warning shadow-lg h-100">
+                <div class="card-header bg-danger bg-opacity-25 text-center py-3" style="border-bottom: 2px solid #ffcc00;">
+                    <h5 class="mb-0 text-warning">
+                        <i class="fas fa-plus-circle"></i> Adquirir Novo Item
+                    </h5>
+                    <small class="text-muted">Encontre tesouros na biblioteca da taverna</small>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label text-warning small fw-bold">
+                                <i class="fas fa-search"></i> Buscar Item
+                            </label>
+                            <select name="item_id" class="form-select bg-dark text-white border-secondary" required>
+                                <option value="">🔍 Selecione um item da biblioteca...</option>
+                                {% for item in itens %}
+                                    <option value="{{ item.id }}" data-raridade="{{ item.raridade }}" data-peso="{{ item.peso }}">
+                                        {% if item.raridade == 'Comum' %}📦
+                                        {% elif item.raridade == 'Incomum' %}✨
+                                        {% elif item.raridade == 'Raro' %}⭐
+                                        {% elif item.raridade == 'Épico' %}🌟
+                                        {% elif item.raridade == 'Lendário' %}🏆
+                                        {% endif %}
+                                        {{ item.nome }} - {{ item.raridade }} ({{ item.peso }}kg)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="item-preview" class="card bg-secondary bg-opacity-25 border-secondary mb-3 d-none">
+                            <div class="card-body text-center p-2">
+                                <small class="text-muted">Item selecionado</small>
+                                <div id="preview-item-nome" class="text-warning fw-bold"></div>
+                                <div id="preview-item-raridade" class="small"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100 py-2">
+                            <i class="fas fa-shopping-cart"></i> Equipar Item
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
 
-        <h4 class="mb-3 text-danger"><i class="fas fa-shield-alt"></i> Equipamentos Atuais</h4>
-        <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle">
-                <thead class="table-danger">
-                    <tr>
-                        <th>Item</th>
-                        <th>Descrição</th>
-                        <th class="text-center">Peso</th>
-                        <th class="text-center">Raridade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in personagem.itens.all %}
-                    <tr>
-                        <td><strong class="text-warning">{{ item.nome }}</strong></td>
-                        <td class="text-muted small">{{ item.descricao|default:"Sem descrição." }}</td>
-                        <td class="text-center">{{ item.peso }} kg</td>
-                        <td class="text-center">
-                            <span class="badge {% if item.raridade == 'Lendário' %}bg-danger{% elif item.raridade == 'Raro' %}bg-primary{% else %}bg-secondary{% endif %}">
-                                {{ item.raridade }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-5 text-muted italic">
-                            <i class="fas fa-ghost fa-2x mb-2"></i><br>
-                            Este aventureiro ainda não possui itens no inventário.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Estatísticas do Inventário -->
+        <div class="col-md-7 mb-4">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="card bg-dark text-white border-info shadow-lg h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-box fa-2x text-info mb-2"></i>
+                            <h3 class="mb-0" id="total-itens">{{ personagem.itens.count }}</h3>
+                            <small class="text-muted">Itens Equipados</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-dark text-white border-warning shadow-lg h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-weight-hanging fa-2x text-warning mb-2"></i>
+                            <h3 class="mb-0" id="peso-total">0</h3>
+                            <small class="text-muted">Peso Total (kg)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- Distribuição por Raridade -->
+    <div class="card bg-dark text-white border-secondary shadow-lg mb-4">
+        <div class="card-header bg-secondary bg-opacity-25" style="border-bottom: 2px solid #8b0000;">
+            <h6 class="mb-0 text-warning">
+                <i class="fas fa-chart-pie"></i> Distribuição por Raridade
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-2" id="raridade-distribution">
+                <!-- JavaScript vai preencher -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Itens do Inventário - Cards em vez de tabela -->
+    <div class="card bg-dark text-white border-danger shadow-lg">
+        <div class="card-header bg-danger text-white text-center py-3" style="background: linear-gradient(135deg, #8b0000, #5a0000);">
+            <h5 class="mb-0">
+                <i class="fas fa-shield-alt"></i> Equipamentos do Herói
+            </h5>
+            <small class="text-light">Itens mágicos e equipamentos equipados</small>
+        </div>
+        <div class="card-body p-3">
+            <div class="row" id="itens-container">
+                {% for item in personagem.itens.all %}
+                <div class="col-md-6 col-lg-4 mb-3 item-card" data-peso="{{ item.peso }}" data-raridade="{{ item.raridade }}">
+                    <div class="card bg-secondary bg-opacity-25 border-{{ item.raridade|lower }} h-100 hover-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="item-icon">
+                                    {% if item.raridade == 'Comum' %}
+                                        <i class="fas fa-box fa-2x text-secondary"></i>
+                                    {% elif item.raridade == 'Incomum' %}
+                                        <i class="fas fa-gem fa-2x text-success"></i>
+                                    {% elif item.raridade == 'Raro' %}
+                                        <i class="fas fa-crown fa-2x text-primary"></i>
+                                    {% elif item.raridade == 'Épico' %}
+                                        <i class="fas fa-star fa-2x text-info"></i>
+                                    {% elif item.raridade == 'Lendário' %}
+                                        <i class="fas fa-dragon fa-2x text-warning"></i>
+                                    {% endif %}
+                                </div>
+                                <form method="POST" action="{% url 'remover_item_inventario' personagem.id item.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('⚠️ Remover {{ item.nome }} do inventário?\n\nEste item será devolvido à biblioteca da taverna.')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <h6 class="text-warning mb-1">{{ item.nome }}</h6>
+                            <p class="small text-muted mb-2">{{ item.descricao|default:"Sem descrição."|truncatewords:8 }}</p>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="badge rarity-badge rarity-{{ item.raridade|lower }}">
+                                    {% if item.raridade == 'Comum' %}📦
+                                    {% elif item.raridade == 'Incomum' %}✨
+                                    {% elif item.raridade == 'Raro' %}⭐
+                                    {% elif item.raridade == 'Épico' %}🌟
+                                    {% elif item.raridade == 'Lendário' %}🏆
+                                    {% endif %}
+                                    {{ item.raridade }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="fas fa-weight-hanging"></i> {{ item.peso }} kg
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-ghost fa-3x mb-3 d-block"></i>
+                        <p>O inventário está vazio.</p>
+                        <small>Adicione itens usando o formulário ao lado!</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão Voltar -->
+    <div class="text-center mt-4">
+        <a href="{% url 'ficha_personagem' personagem.id %}" class="btn btn-outline-light">
+            <i class="fas fa-id-card"></i> Voltar à Ficha do Personagem
+        </a>
     </div>
 </div>
 
 <style>
-    .inventory-card { min-height: 600px; }
-    .table { border-radius: 8px; overflow: hidden; }
-    .table-hover tbody tr:hover { background-color: rgba(139, 0, 0, 0.2) !important; }
-    .messages-container { max-width: 800px; margin: 0 auto 20px auto; }
+    .hover-card {
+        transition: all 0.3s ease;
+        border-width: 2px;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Cores por raridade para as bordas */
+    .border-comum { border-color: #888 !important; }
+    .border-incomum { border-color: #4caf50 !important; }
+    .border-raro { border-color: #2196f3 !important; }
+    .border-épico { border-color: #9c27b0 !important; }
+    .border-lendário { border-color: #ff9800 !important; }
+    
+    /* Badges de raridade */
+    .rarity-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    .rarity-comum { background: #666; color: white; }
+    .rarity-incomum { background: #4caf50; color: white; }
+    .rarity-raro { background: #2196f3; color: white; }
+    .rarity-épico { background: #9c27b0; color: white; }
+    .rarity-lendário { background: #ff9800; color: #000; }
+    
+    /* Select estilizado */
+    .form-select {
+        background-color: #2a2a2a !important;
+        color: #ffffff !important;
+        border: 1px solid #555 !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+    }
+    
+    .form-select:focus {
+        border-color: #ffcc00 !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+    }
+    
+    /* Animação de entrada */
+    .item-card {
+        animation: fadeInUp 0.3s ease-out;
+        animation-fill-mode: both;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Delay nas animações */
+    .item-card:nth-child(1) { animation-delay: 0.05s; }
+    .item-card:nth-child(2) { animation-delay: 0.1s; }
+    .item-card:nth-child(3) { animation-delay: 0.15s; }
+    .item-card:nth-child(4) { animation-delay: 0.2s; }
+    .item-card:nth-child(5) { animation-delay: 0.25s; }
+    .item-card:nth-child(6) { animation-delay: 0.3s; }
+    
+    /* Preview do item */
+    #item-preview {
+        transition: all 0.3s ease;
+    }
+    
+    /* Ícone do item */
+    .item-icon {
+        transition: transform 0.2s ease;
+    }
+    
+    .hover-card:hover .item-icon {
+        transform: scale(1.05);
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calcular peso total
+        function calcularPesoTotal() {
+            const items = document.querySelectorAll('.item-card');
+            let pesoTotal = 0;
+            const raridades = {
+                'Comum': 0,
+                'Incomum': 0,
+                'Raro': 0,
+                'Épico': 0,
+                'Lendário': 0
+            };
+            
+            items.forEach(item => {
+                const peso = parseFloat(item.dataset.peso) || 0;
+                const raridade = item.dataset.raridade;
+                pesoTotal += peso;
+                if (raridades[raridade] !== undefined) {
+                    raridades[raridade]++;
+                }
+            });
+            
+            document.getElementById('peso-total').textContent = pesoTotal.toFixed(1);
+            
+            // Atualizar distribuição por raridade
+            const distributionDiv = document.getElementById('raridade-distribution');
+            if (distributionDiv) {
+                const totalItems = items.length;
+                distributionDiv.innerHTML = Object.entries(raridades).map(([raridade, count]) => {
+                    const percent = totalItems > 0 ? (count / totalItems * 100).toFixed(0) : 0;
+                    let icon = '';
+                    if (raridade === 'Comum') icon = '📦';
+                    else if (raridade === 'Incomum') icon = '✨';
+                    else if (raridade === 'Raro') icon = '⭐';
+                    else if (raridade === 'Épico') icon = '🌟';
+                    else if (raridade === 'Lendário') icon = '🏆';
+                    
+                    return `
+                        <div class="col-md-2 col-4">
+                            <div class="text-center">
+                                <small class="text-muted">${icon} ${raridade}</small>
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar bg-${raridade === 'Comum' ? 'secondary' : raridade === 'Incomum' ? 'success' : raridade === 'Raro' ? 'primary' : raridade === 'Épico' ? 'info' : 'warning'}" 
+                                         role="progressbar" style="width: ${percent}%"></div>
+                                </div>
+                                <small class="text-white">${count}</small>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // Preview do item selecionado
+        const selectItem = document.querySelector('select[name="item_id"]');
+        const previewDiv = document.getElementById('item-preview');
+        const previewNome = document.getElementById('preview-item-nome');
+        const previewRaridade = document.getElementById('preview-item-raridade');
+        
+        if (selectItem) {
+            selectItem.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (this.value) {
+                    const nome = selectedOption.text.split(' - ')[0].replace(/[📦✨⭐🌟🏆]/g, '').trim();
+                    const raridadeMatch = selectedOption.text.match(/(Comum|Incomum|Raro|Épico|Lendário)/);
+                    const raridade = raridadeMatch ? raridadeMatch[0] : '';
+                    
+                    let raridadeIcon = '';
+                    if (raridade === 'Comum') raridadeIcon = '📦';
+                    else if (raridade === 'Incomum') raridadeIcon = '✨';
+                    else if (raridade === 'Raro') raridadeIcon = '⭐';
+                    else if (raridade === 'Épico') raridadeIcon = '🌟';
+                    else if (raridade === 'Lendário') raridadeIcon = '🏆';
+                    
+                    previewNome.textContent = nome;
+                    previewRaridade.innerHTML = `<span class="rarity-badge rarity-${raridade.toLowerCase()}">${raridadeIcon} ${raridade}</span>`;
+                    previewDiv.classList.remove('d-none');
+                } else {
+                    previewDiv.classList.add('d-none');
+                }
+            });
+        }
+        
+        calcularPesoTotal();
+    });
+</script>
 {% endblock %}

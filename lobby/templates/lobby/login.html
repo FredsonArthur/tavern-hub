@@ -1,21 +1,38 @@
 {% extends 'lobby/base.html' %}
 
+{% block title %}Entrar na Taverna{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5 animate__animated animate__fadeIn">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-5">
-            <div class="card bg-dark text-white border-0 shadow-lg" style="border-radius: 10px;">
-                <div class="card-header text-center border-0 p-4" style="background-color: #111111; border-bottom: 2px solid #ffcc00 !important; border-top-left-radius: 10px; border-top-right-radius: 10px;">
-                    <h2 class="text-warning mb-1" style="font-family: 'Georgia', serif; letter-spacing: 1px;">
-                        <i class="fas fa-door-open"></i> Entrar na Taverna
+            <div class="card bg-dark text-white border-warning shadow-lg animate__animated animate__fadeInDown">
+                <!-- Cabeçalho com decoração medieval -->
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, #1a1a1a, #0d0d0d); border-bottom: 3px solid #ffcc00; border-radius: 12px 12px 0 0;">
+                    <div class="tavern-icon mb-2">
+                        <i class="fas fa-dungeon fa-3x text-warning"></i>
+                    </div>
+                    <h2 class="text-warning mb-1" style="font-family: 'Cinzel', 'Georgia', serif; letter-spacing: 2px;">
+                        TavernHub
                     </h2>
-                    <p class="text-muted small mb-0">Identifique-se para acessar suas mesas e heróis</p>
+                    <p class="text-muted small mb-0">Entre na taverna e inicie sua jornada</p>
                 </div>
 
-                <div class="card-body p-4 bg-secondary bg-opacity-10">
+                <div class="card-body p-4">
+                    <!-- Mensagem de boas-vindas -->
+                    <div class="text-center mb-4">
+                        <div class="welcome-text">
+                            <i class="fas fa-mug-hot text-warning"></i>
+                            <span class="text-muted small d-block mt-1">"Que os dados estejam a seu favor"</span>
+                        </div>
+                    </div>
+
                     {% if form.errors %}
-                        <div class="alert alert-danger small py-2 animate__animated animate__shakeX">
-                            <i class="fas fa-triangle-exclamation"></i> Usuário ou senha incorretos. Tente novamente, aventureiro.
+                        <div class="alert alert-danger bg-opacity-25 border-danger text-center animate__animated animate__shakeX">
+                            <i class="fas fa-skull-crosswalk"></i>
+                            <strong>Falha na autenticação!</strong>
+                            <hr class="border-danger my-2">
+                            <small>Usuário ou senha incorretos. Tente novamente, aventureiro.</small>
                         </div>
                     {% endif %}
 
@@ -23,70 +40,213 @@
                         {% csrf_token %}
                         
                         {% for field in form %}
-                            <div class="mb-3 text-start">
-                                <label for="{{ field.id_for_label }}" class="form-label text-warning small fw-bold">
+                            <div class="mb-4 text-start">
+                                <label for="{{ field.id_for_label }}" class="form-label text-warning fw-bold small">
+                                    {% if field.name == 'username' %}
+                                        <i class="fas fa-user"></i>
+                                    {% elif field.name == 'password' %}
+                                        <i class="fas fa-lock"></i>
+                                    {% endif %}
                                     {{ field.label }}:
                                 </label>
-                                {{ field }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-dark border-secondary text-warning">
+                                        {% if field.name == 'username' %}
+                                            <i class="fas fa-user"></i>
+                                        {% else %}
+                                            <i class="fas fa-key"></i>
+                                        {% endif %}
+                                    </span>
+                                    {{ field }}
+                                </div>
                                 {% if field.errors %}
                                     <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                        {% for error in field.errors %}{{ error }}{% endfor %}
+                                        {% for error in field.errors %}
+                                            <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                        {% endfor %}
                                     </div>
                                 {% endif %}
                             </div>
                         {% endfor %}
                         
+                        <!-- Lembrar de mim (opcional) -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input bg-dark border-secondary" type="checkbox" id="remember_me">
+                            <label class="form-check-label small text-muted" for="remember_me">
+                                <i class="fas fa-check-circle"></i> Lembrar de mim
+                            </label>
+                        </div>
+                        
                         <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-warning fw-bold text-dark btn-lg shadow-sm transition-btn">
-                                <i class="fas fa-dice-d20"></i> Iniciar Jornada
+                            <button type="submit" class="btn btn-warning fw-bold text-dark btn-lg shadow-lg transition-btn">
+                                <i class="fas fa-dice-d20"></i> Entrar na Taverna
                             </button>
                         </div>
                     </form>
                     
-                    <hr class="border-secondary my-4">
+                    <div class="separator my-4">
+                        <hr class="border-secondary">
+                        <span class="separator-text text-muted small">ou</span>
+                        <hr class="border-secondary">
+                    </div>
                     
-                    <div class="text-center small">
-                        <p class="text-muted mb-0">
-                            Novo por aqui? <a href="{% url 'registro' %}" class="text-warning text-decoration-none fw-bold hover-link">Crie uma conta e forje seu destino</a>
+                    <div class="text-center">
+                        <p class="text-muted small mb-2">
+                            <i class="fas fa-scroll"></i> Ainda não possui um pergaminho?
                         </p>
+                        <a href="{% url 'registro' %}" class="btn btn-outline-warning btn-sm px-4 hover-link">
+                            <i class="fas fa-user-plus"></i> Criar Nova Conta
+                        </a>
                     </div>
                 </div>
+                
+                <div class="card-footer text-center py-3 bg-transparent border-secondary">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-halved text-warning"></i>
+                        Sistema seguro com auditoria de rolagens
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Dica para novos aventureiros -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Ao criar sua conta, você poderá mestrar mesas e criar heróis épicos!
+                </small>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* Injeção precisa de estilos nos inputs gerados nativamente pelo Django Auth Form */
+    /* Inputs estilizados */
+    .input-group-text {
+        border: 1px solid #444;
+        border-right: none;
+        background-color: #1a1a1a !important;
+    }
+    
     input[type="text"], input[type="password"] {
-        display: block;
-        width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.5;
+        background-color: #1a1a1a !important;
         color: #ffffff !important;
-        background-color: #111111 !important;
-        background-clip: padding-box;
-        border: 1px solid #444444 !important;
-        border-radius: 0.375rem;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        border: 1px solid #444 !important;
+        border-left: none !important;
+        border-radius: 0 8px 8px 0 !important;
+        padding: 12px 15px !important;
+        transition: all 0.2s ease;
     }
+    
     input[type="text"]:focus, input[type="password"]:focus {
-        background-color: #151515 !important;
-        color: #ffffff !important;
         border-color: #ffcc00 !important;
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.2) !important;
+        box-shadow: none !important;
+        background-color: #252525 !important;
     }
+    
+    /* Checkbox customizado */
+    .form-check-input {
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-check-input:checked {
+        background-color: #ffcc00;
+        border-color: #ffcc00;
+    }
+    
+    .form-check-input:focus {
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25);
+    }
+    
+    /* Separador */
+    .separator {
+        display: flex;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .separator hr {
+        flex: 1;
+        margin: 0;
+    }
+    
+    .separator-text {
+        margin: 0 15px;
+    }
+    
+    /* Botão de login */
     .transition-btn {
-        transition: transform 0.2s, background-color 0.2s;
+        transition: all 0.2s ease;
+        border-radius: 8px;
     }
+    
     .transition-btn:hover {
-        transform: scale(1.02);
+        transform: translateY(-3px);
+        filter: brightness(1.05);
+        box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3);
     }
+    
+    .transition-btn:active {
+        transform: translateY(1px);
+    }
+    
+    /* Link de registro */
+    .hover-link {
+        transition: all 0.2s ease;
+    }
+    
     .hover-link:hover {
-        text-decoration: underline !important;
+        transform: translateX(5px);
+        background-color: #ffcc00;
+        color: #1a1a1a !important;
+        border-color: #ffcc00;
+    }
+    
+    /* Ícone da taverna */
+    .tavern-icon {
+        animation: floatIcon 3s ease-in-out infinite;
+        display: inline-block;
+    }
+    
+    @keyframes floatIcon {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+    }
+    
+    /* Animação do card */
+    .animate__animated.animate__fadeInDown {
+        animation-duration: 0.6s;
+    }
+    
+    /* Estilo do card */
+    .card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    /* Alert personalizado */
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(139, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
+        border: 1px solid #8b0000;
+        border-radius: 8px;
+    }
+    
+    /* Placeholder */
+    input::placeholder {
+        color: #666 !important;
+        font-size: 0.85rem;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 576px) {
+        .card-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .btn-warning {
+            font-size: 0.9rem;
+        }
     }
 </style>
 {% endblock %}

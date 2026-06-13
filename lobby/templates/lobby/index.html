@@ -1,111 +1,339 @@
 {% extends 'lobby/base.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - TavernHub{% endblock %}
 
 {% block content %}
 <div class="container mt-4 animate__animated animate__fadeIn">
-    <div class="text-center mb-4">
-        <h1 class="text-warning">
-            <i class="fas fa-mug-hot"></i> Bem-vindo à Taverna, {{ user.username }}!
+    <!-- Cabeçalho com saudação personalizada -->
+    <div class="text-center mb-5">
+        <div class="welcome-badge d-inline-block px-4 py-2 rounded-pill bg-danger bg-opacity-25 mb-3">
+            <i class="fas fa-mug-hot text-warning"></i>
+            <span class="text-warning">Bem-vindo, Mestre</span>
+        </div>
+        <h1 class="text-warning display-4 fw-bold" style="font-family: 'Cinzel', 'Georgia', serif;">
+            <i class="fas fa-dungeon"></i> TavernHub
         </h1>
-        <p class="text-muted">Role os dados ou gerencie suas mesas e personagens.</p>
+        <p class="text-muted lead">Role os dados ou gerencie suas mesas e personagens.</p>
     </div>
 
-    <!-- Cards de Acesso Rápido -->
-    <div class="row mb-5">
-        <div class="col-md-3 mb-3">
+    <!-- Cards de Acesso Rápido com estatísticas -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
             <a href="{% url 'lista_mesas' %}" class="text-decoration-none">
-                <div class="card bg-dark border-danger text-center p-3 h-100 hover-card">
-                    <i class="fas fa-dragon fa-3x text-danger mb-2"></i>
-                    <h5 class="text-white">Mesas</h5>
+                <div class="card bg-dark border-danger text-center p-4 h-100 hover-card">
+                    <div class="card-icon mb-3">
+                        <i class="fas fa-dragon fa-3x text-danger"></i>
+                    </div>
+                    <h5 class="text-white mb-2">Mesas</h5>
                     <small class="text-muted">Gerencie suas campanhas</small>
+                    <div class="stat-badge mt-3">
+                        <span class="badge bg-danger bg-opacity-50">Ativas</span>
+                    </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-3">
             <a href="{% url 'lista_personagens' %}" class="text-decoration-none">
-                <div class="card bg-dark border-danger text-center p-3 h-100 hover-card">
-                    <i class="fas fa-users fa-3x text-success mb-2"></i>
-                    <h5 class="text-white">Personagens</h5>
+                <div class="card bg-dark border-danger text-center p-4 h-100 hover-card">
+                    <div class="card-icon mb-3">
+                        <i class="fas fa-users fa-3x text-success"></i>
+                    </div>
+                    <h5 class="text-white mb-2">Personagens</h5>
                     <small class="text-muted">Crie e edite heróis</small>
+                    <div class="stat-badge mt-3">
+                        <span class="badge bg-success bg-opacity-50">Aventureiros</span>
+                    </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-3">
             <a href="{% url 'lista_itens' %}" class="text-decoration-none">
-                <div class="card bg-dark border-danger text-center p-3 h-100 hover-card">
-                    <i class="fas fa-box-open fa-3x text-warning mb-2"></i>
-                    <h5 class="text-white">Itens</h5>
+                <div class="card bg-dark border-danger text-center p-4 h-100 hover-card">
+                    <div class="card-icon mb-3">
+                        <i class="fas fa-box-open fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="text-white mb-2">Itens</h5>
                     <small class="text-muted">Forje equipamentos</small>
+                    <div class="stat-badge mt-3">
+                        <span class="badge bg-warning bg-opacity-50 text-dark">Arsenal</span>
+                    </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-3">
             <a href="{% url 'painel_estatisticas' %}" class="text-decoration-none">
-                <div class="card bg-dark border-danger text-center p-3 h-100 hover-card">
-                    <i class="fas fa-chart-line fa-3x text-info mb-2"></i>
-                    <h5 class="text-white">Estatísticas</h5>
+                <div class="card bg-dark border-danger text-center p-4 h-100 hover-card">
+                    <div class="card-icon mb-3">
+                        <i class="fas fa-chart-line fa-3x text-info"></i>
+                    </div>
+                    <h5 class="text-white mb-2">Estatísticas</h5>
                     <small class="text-muted">Dados e rankings</small>
+                    <div class="stat-badge mt-3">
+                        <span class="badge bg-info bg-opacity-50">Análise</span>
+                    </div>
                 </div>
             </a>
         </div>
     </div>
 
-    <!-- Rolador de Dados -->
+    <!-- Rolador de Dados Aprimorado -->
     <div class="row justify-content-center mb-5">
-        <div class="col-md-6 text-center">
-            <div class="dice-container p-4 border border-secondary rounded bg-dark shadow-lg">
-                <h3 id="resultado-dado" class="display-1 text-warning fw-bold">--</h3>
-                <div class="mt-3 d-flex flex-wrap justify-content-center gap-2">
-                    <button class="btn btn-danger btn-lg" onclick="rolarDado(4)">D4</button>
-                    <button class="btn btn-danger btn-lg" onclick="rolarDado(6)">D6</button>
-                    <button class="btn btn-danger btn-lg" onclick="rolarDado(8)">D8</button>
-                    <button class="btn btn-danger btn-lg" onclick="rolarDado(10)">D10</button>
-                    <button class="btn btn-danger btn-lg" onclick="rolarDado(12)">D12</button>
-                    <button class="btn btn-warning btn-lg text-dark fw-bold" onclick="rolarDado(20)">D20</button>
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-warning shadow-lg">
+                <div class="card-header bg-danger bg-opacity-25 text-center py-3" style="border-bottom: 2px solid #ffcc00;">
+                    <h4 class="mb-0 text-warning">
+                        <i class="fas fa-dice-d20"></i> ROLAGEM DE DADOS
+                    </h4>
+                    <small class="text-muted">O destino está em suas mãos</small>
+                </div>
+                <div class="card-body text-center p-4">
+                    <!-- Dado Rolando -->
+                    <div class="dice-display mb-4">
+                        <div id="resultado-dado" class="dice-value display-1 text-warning fw-bold">--</div>
+                        <div id="dice-message" class="small text-muted mt-2">Clique em um dado para rolar</div>
+                    </div>
+                    
+                    <!-- Botões de Dados -->
+                    <div class="dice-buttons">
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-auto">
+                                <button class="btn btn-dice dice-d4" onclick="rolarDado(4)">
+                                    <span class="dice-number">D4</span>
+                                    <i class="fas fa-gem"></i>
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-dice dice-d6" onclick="rolarDado(6)">
+                                    <span class="dice-number">D6</span>
+                                    <i class="fas fa-dice-six"></i>
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-dice dice-d8" onclick="rolarDado(8)">
+                                    <span class="dice-number">D8</span>
+                                    <i class="fas fa-dice-d8"></i>
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-dice dice-d10" onclick="rolarDado(10)">
+                                    <span class="dice-number">D10</span>
+                                    <i class="fas fa-dice-d10"></i>
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-dice dice-d12" onclick="rolarDado(12)">
+                                    <span class="dice-number">D12</span>
+                                    <i class="fas fa-dice-d12"></i>
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-dice dice-d20" onclick="rolarDado(20)">
+                                    <span class="dice-number">D20</span>
+                                    <i class="fas fa-dice-d20"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Log de Rolagens -->
+    <!-- Log de Rolagens Aprimorado -->
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="text-light"><i class="fas fa-scroll"></i> Crônicas Recentes</h4>
-                <button class="btn btn-sm btn-outline-danger" onclick="limparLogServidor()">
-                    <i class="fas fa-trash-alt"></i> Limpar Logs
-                </button>
-            </div>
-            <div id="log-container" class="bg-black p-3 rounded border border-secondary" 
-                 style="min-height: 200px; max-height: 300px; overflow-y: auto; font-family: monospace;">
-                <div class="text-muted text-center">Carregando rolagens...</div>
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <div class="card-header bg-danger bg-opacity-25 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #8b0000;">
+                    <div>
+                        <h5 class="mb-0 text-warning">
+                            <i class="fas fa-scroll"></i> Crônicas Recentes
+                        </h5>
+                        <small class="text-muted">Histórico de rolagens da taverna</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="limparLogServidor()">
+                        <i class="fas fa-trash-alt"></i> Limpar Logs
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="log-container" class="log-container p-3" style="min-height: 250px; max-height: 350px; overflow-y: auto;">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2 d-block"></i>
+                            Carregando crônicas...
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted small text-center">
+                    <i class="fas fa-history"></i> As últimas 30 rolagens são exibidas em tempo real
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
+    /* Cards de Acesso Rápido */
     .hover-card {
-        transition: transform 0.2s, border-color 0.2s;
+        transition: all 0.3s ease;
+        border-width: 2px;
     }
+    
     .hover-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-8px);
         border-color: #ffcc00 !important;
+        box-shadow: 0 10px 25px rgba(139, 0, 0, 0.3);
     }
-    .btn-danger, .btn-warning {
-        transition: transform 0.1s;
+    
+    .card-icon {
+        transition: transform 0.2s ease;
     }
-    .btn-danger:active, .btn-warning:active {
-        transform: scale(0.95);
+    
+    .hover-card:hover .card-icon {
+        transform: scale(1.1);
+    }
+    
+    .stat-badge {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .hover-card:hover .stat-badge {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Botões de Dados */
+    .btn-dice {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        border: none;
+    }
+    
+    .dice-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .btn-dice i {
+        font-size: 1.2rem;
+        opacity: 0.7;
+    }
+    
+    .btn-dice:hover {
+        transform: translateY(-5px) scale(1.05);
+        filter: brightness(1.1);
+    }
+    
+    .btn-dice:active {
+        transform: translateY(2px) scale(0.98);
+    }
+    
+    .dice-d4 { background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; }
+    .dice-d6 { background: linear-gradient(135deg, #1565c0, #0d47a1); color: white; }
+    .dice-d8 { background: linear-gradient(135deg, #6a1b9a, #4a148c); color: white; }
+    .dice-d10 { background: linear-gradient(135deg, #c62828, #8e0000); color: white; }
+    .dice-d12 { background: linear-gradient(135deg, #f57c00, #e65100); color: white; }
+    .dice-d20 { background: linear-gradient(135deg, #ffd700, #ff8f00); color: #1a1a1a; }
+    
+    /* Display do Dado */
+    .dice-display {
+        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+        border-radius: 20px;
+        padding: 30px;
+        border: 2px solid #ffcc00;
+    }
+    
+    .dice-value {
+        font-size: 5rem;
+        font-weight: bold;
+        transition: all 0.1s ease;
+    }
+    
+    /* Animações do dado */
+    .dice-roll {
+        animation: diceShake 0.3s ease-in-out;
+    }
+    
+    @keyframes diceShake {
+        0%, 100% { transform: translateX(0) rotate(0deg); }
+        25% { transform: translateX(-10px) rotate(-10deg); }
+        75% { transform: translateX(10px) rotate(10deg); }
+    }
+    
+    /* Log Container */
+    .log-container {
+        background: linear-gradient(135deg, #0a0a0a, #111111);
+        font-family: 'Courier New', monospace;
+    }
+    
+    .log-entry {
+        padding: 8px 12px;
+        border-bottom: 1px solid #2a2a2a;
+        transition: all 0.2s ease;
+    }
+    
+    .log-entry:hover {
+        background: rgba(139, 0, 0, 0.15);
+        transform: translateX(5px);
+    }
+    
+    /* Crítico e Falha Crítica */
+    .critical {
+        color: #ffd700;
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    }
+    
+    .critical-fail {
+        color: #ff4444;
+        text-shadow: 0 0 5px rgba(255, 68, 68, 0.5);
+    }
+    
+    /* Animações de entrada */
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .btn-dice {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .dice-number {
+            font-size: 1.2rem;
+        }
+        
+        .dice-value {
+            font-size: 3rem;
+        }
     }
 </style>
-{% endblock %}
 
 {% block extra_scripts %}
 <script>
     const nomeExibicao = "{{ user.username }}";
     const idPersonagem = null;
+    let ultimaRolagem = null;
 
     function atualizarLog() {
         fetch('/lobby/api/rolagem/listar/')
@@ -113,34 +341,68 @@
             .then(data => {
                 const logDiv = document.getElementById('log-container');
                 if (data.rolagens && data.rolagens.length > 0) {
-                    logDiv.innerHTML = data.rolagens.map(r => 
-                        `<div class="border-bottom border-secondary py-1">
-                            <small class="text-muted">[${r.data_hora}]</small> 
-                            <strong class="text-warning">${r.jogador}</strong> 
-                            rolou <span class="text-info">${r.tipo_dado}</span>: 
-                            <span class="fw-bold text-success">${r.resultado}</span>
-                            ${r.editado ? '<span class="badge bg-danger ms-2">Editado</span>' : ''}
-                        </div>`
-                    ).join('');
+                    logDiv.innerHTML = data.rolagens.map(r => {
+                        let resultadoClass = '';
+                        let resultadoIcon = '';
+                        if (r.resultado === 20) {
+                            resultadoClass = 'critical';
+                            resultadoIcon = '🎉 ';
+                        } else if (r.resultado === 1) {
+                            resultadoClass = 'critical-fail';
+                            resultadoIcon = '💀 ';
+                        }
+                        
+                        return `
+                            <div class="log-entry">
+                                <small class="text-muted">[${r.data_hora}]</small> 
+                                <strong class="text-warning">${r.jogador}</strong> 
+                                rolou <span class="text-info">${r.tipo_dado}</span>: 
+                                <span class="fw-bold ${resultadoClass}">${resultadoIcon}${r.resultado}</span>
+                                ${r.editado ? '<span class="badge bg-danger ms-2">✏️ Editado</span>' : ''}
+                            </div>
+                        `;
+                    }).join('');
                 } else {
-                    logDiv.innerHTML = '<div class="text-muted text-center">Nenhuma rolagem registrada ainda. Role um dado!</div>';
+                    logDiv.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-dice-d20 fa-2x mb-2 d-block"></i>Nenhuma rolagem registrada ainda.<br><small>Role um dado para começar!</small></div>';
                 }
             })
             .catch(error => {
                 console.error('Erro ao buscar logs:', error);
-                document.getElementById('log-container').innerHTML = '<div class="text-danger text-center">Erro ao carregar rolagens</div>';
+                document.getElementById('log-container').innerHTML = '<div class="text-danger text-center py-5"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>Erro ao carregar rolagens</div>';
             });
     }
 
     function rolarDado(faces) {
         const resultDiv = document.getElementById('resultado-dado');
+        const diceMessage = document.getElementById('dice-message');
+        
+        // Animação de rolagem
         resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        resultDiv.classList.add('animate__animated', 'animate__pulse');
+        resultDiv.classList.add('dice-roll');
+        diceMessage.innerHTML = '<i class="fas fa-hourglass-half"></i> Rolando o dado...';
         
         setTimeout(() => {
             const roll = Math.floor(Math.random() * faces) + 1;
-            resultDiv.innerHTML = roll;
-            resultDiv.classList.remove('animate__pulse');
+            
+            // Efeito visual para crítico/falha
+            if (roll === 20) {
+                resultDiv.innerHTML = '🎉 ' + roll + ' 🎉';
+                diceMessage.innerHTML = '<span class="text-warning">✨ CRÍTICO! O destino sorri para você! ✨</span>';
+            } else if (roll === 1) {
+                resultDiv.innerHTML = '💀 ' + roll + ' 💀';
+                diceMessage.innerHTML = '<span class="text-danger">💀 FALHA CRÍTICA! O destino foi cruel... 💀</span>';
+            } else if (roll >= 15) {
+                resultDiv.innerHTML = roll;
+                diceMessage.innerHTML = '<span class="text-success">✅ Sucesso! A aventura continua.</span>';
+            } else if (roll <= 5) {
+                resultDiv.innerHTML = roll;
+                diceMessage.innerHTML = '<span class="text-danger">❌ Falha! Talvez na próxima...</span>';
+            } else {
+                resultDiv.innerHTML = roll;
+                diceMessage.innerHTML = '<span class="text-muted">⚖️ Um resultado mediano...</span>';
+            }
+            
+            resultDiv.classList.remove('dice-roll');
             
             fetch('/lobby/api/rolagem/salvar/', {
                 method: 'POST',
@@ -162,11 +424,11 @@
                 }
             })
             .catch(error => console.error('Erro ao salvar rolagem:', error));
-        }, 200);
+        }, 300);
     }
 
     function limparLogServidor() {
-        if(confirm("⚠️ Tem certeza? Isso apagará todas as crônicas da taverna!")) {
+        if(confirm("⚠️ ATENÇÃO MESTRE!\n\nDeseja realmente limpar todas as crônicas da taverna?\n\nEsta ação não pode ser desfeita e apagará todo o histórico de rolagens.")) {
             fetch('/lobby/api/rolagem/limpar/', { 
                 method: 'POST', 
                 headers: {'X-CSRFToken': '{{ csrf_token }}'} 
@@ -174,11 +436,18 @@
             .then(() => {
                 atualizarLog();
                 document.getElementById('resultado-dado').innerHTML = '--';
+                document.getElementById('dice-message').innerHTML = 'Logs limpos. O destino recomeça...';
+                setTimeout(() => {
+                    document.getElementById('dice-message').innerHTML = 'Clique em um dado para rolar';
+                }, 3000);
             });
         }
     }
 
-    document.addEventListener('DOMContentLoaded', atualizarLog);
-    setInterval(atualizarLog, 5000);
+    document.addEventListener('DOMContentLoaded', () => {
+        atualizarLog();
+        setInterval(atualizarLog, 5000);
+    });
 </script>
+{% endblock %}
 {% endblock %}

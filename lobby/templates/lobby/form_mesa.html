@@ -1,21 +1,27 @@
 {% extends 'lobby/base.html' %}
 
+{% block title %}Convocar Nova Mesa{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5 animate__animated animate__fadeIn">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg border-0 bg-dark text-white" style="border-radius: 10px;">
-                <div class="card-header text-center border-0 p-4" style="background-color: #111111; border-bottom: 2px solid #8b0000 !important; border-top-left-radius: 10px; border-top-right-radius: 10px;">
-                    <h3 class="mb-0 text-warning" style="font-family: 'Georgia', serif; letter-spacing: 1px;">
-                        🏰 Convocar Nova Mesa
-                    </h3>
-                    <small class="text-muted">Inicie uma nova campanha e prepare o lobby para receber os aventureiros</small>
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <!-- Cabeçalho com efeito de pergaminho -->
+                <div class="card-header bg-danger text-white text-center py-4" style="background: linear-gradient(135deg, #8b0000, #5a0000);">
+                    <div class="scroll-icon mb-2">
+                        <i class="fas fa-scroll fa-3x animate__animated animate__pulse animate__infinite"></i>
+                    </div>
+                    <h2 class="mb-0 fw-bold" style="font-family: 'Cinzel', 'Georgia', serif;">
+                        <i class="fas fa-dragon"></i> Convocar Nova Mesa
+                    </h2>
+                    <small class="text-light">Inicie uma nova campanha e prepare o lobby para os aventureiros</small>
                 </div>
-
-                <div class="card-body p-4 bg-secondary bg-opacity-10">
-                    <form method="POST" novalidate>
+                
+                <div class="card-body p-4">
+                    <form method="POST" novalidate id="mesa-form">
                         {% csrf_token %}
-
+                        
                         {% if form.non_field_errors %}
                             <div class="alert alert-danger animate__animated animate__shakeX">
                                 {% for error in form.non_field_errors %}
@@ -23,75 +29,297 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
-
-                        <div class="mb-4 text-start">
-                            <label for="{{ form.titulo.id_for_label }}" class="form-label text-warning small fw-bold">
-                                <i class="fas fa-scroll"></i> Título da Saga / Campanha:
-                            </label>
-                            {{ form.titulo }}
-                            {% if form.titulo.errors %}
-                                <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                    {% for error in form.titulo.errors %}
-                                        <i class="fas fa-circle-exclamation"></i> {{ error }}
-                                    {% endfor %}
+                        
+                        <div class="row">
+                            <div class="col-md-7">
+                                <!-- Título da Mesa -->
+                                <div class="mb-4">
+                                    <label for="{{ form.titulo.id_for_label }}" class="form-label text-warning fw-bold">
+                                        <i class="fas fa-scroll"></i> {{ form.titulo.label }}
+                                    </label>
+                                    {{ form.titulo }}
+                                    {% if form.titulo.help_text %}
+                                        <small class="text-muted d-block mt-1">{{ form.titulo.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.titulo.errors %}
+                                        <div class="text-danger small mt-1">{{ form.titulo.errors }}</div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
+                                
+                                <!-- Sugestões de Títulos -->
+                                <div class="mb-4">
+                                    <label class="form-label text-warning fw-bold">
+                                        <i class="fas fa-lightbulb"></i> Sugestões Épicas
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="suggestion-badge" data-titulo="Crônicas de Arton">📖 Crônicas de Arton</span>
+                                        <span class="suggestion-badge" data-titulo="A Maldição de Strahd">🧛 A Maldição de Strahd</span>
+                                        <span class="suggestion-badge" data-titulo="Terra Devastada">⚔️ Terra Devastada</span>
+                                        <span class="suggestion-badge" data-titulo="O Trono de Ferro">👑 O Trono de Ferro</span>
+                                        <span class="suggestion-badge" data-titulo="Masmorras do Esquecimento">🗝️ Masmorras do Esquecimento</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-5">
+                                <!-- Preview da Mesa -->
+                                <div class="card bg-secondary bg-opacity-25 border-danger mb-3">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-danger mb-2">
+                                            <i class="fas fa-eye"></i> Preview da Mesa
+                                        </h6>
+                                        <div id="preview-mesa" class="preview-mesa">
+                                            <i class="fas fa-dungeon fa-3x text-muted mb-2"></i>
+                                            <div id="preview-titulo" class="fw-bold text-warning fs-5">Título da Campanha</div>
+                                            <div id="preview-mestre" class="small text-muted">
+                                                <i class="fas fa-crown"></i> Mestre: {{ user.username }}
+                                            </div>
+                                            <div id="preview-status" class="small text-success mt-2">
+                                                <i class="fas fa-circle"></i> Aguardando aventureiros
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Estatísticas da Mesa (Preview) -->
+                                <div class="stats-preview">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="bg-secondary bg-opacity-25 rounded p-2 text-center">
+                                                <small class="text-muted d-block">Personagens</small>
+                                                <strong class="text-info">0</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-secondary bg-opacity-25 rounded p-2 text-center">
+                                                <small class="text-muted d-block">Rolagens</small>
+                                                <strong class="text-info">0</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="mb-4 text-start">
-                            <label for="{{ form.descricao.id_for_label }}" class="form-label text-warning small fw-bold">
-                                <i class="fas fa-book-open"></i> Crônicas e Diretrizes da Mesa:
+                        
+                        <!-- Descrição -->
+                        <div class="mb-4">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label text-warning fw-bold">
+                                <i class="fas fa-book-open"></i> {{ form.descricao.label }}
                             </label>
                             {{ form.descricao }}
                             {% if form.descricao.errors %}
-                                <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                    {% for error in form.descricao.errors %}
-                                        <i class="fas fa-circle-exclamation"></i> {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{{ form.descricao.errors }}</div>
                             {% endif %}
                         </div>
-
-                        <hr class="border-secondary my-4">
-
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'dashboard' %}" class="btn btn-outline-light px-4 transition-btn">
-                                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                        
+                        <!-- Dicas para Mestres -->
+                        <div class="card bg-secondary bg-opacity-25 border-warning mb-4">
+                            <div class="card-body">
+                                <h6 class="text-warning mb-2">
+                                    <i class="fas fa-crown"></i> Dicas para o Mestre
+                                </h6>
+                                <ul class="small text-muted mb-0">
+                                    <li><i class="fas fa-check-circle text-success"></i> Descreva o cenário e o tom da aventura</li>
+                                    <li><i class="fas fa-check-circle text-success"></i> Defina regras especiais ou homebrew</li>
+                                    <li><i class="fas fa-check-circle text-success"></i> Convide seus jogadores para se juntarem</li>
+                                    <li><i class="fas fa-check-circle text-success"></i> Use o painel do mestre para gerenciar rolagens</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between gap-3 mt-4">
+                            <a href="{% url 'lista_mesas' %}" class="btn btn-outline-secondary flex-grow-1 py-2 transition-btn">
+                                <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger btn-lg fw-bold px-5 shadow-sm" style="background-color: #8b0000; border-color: #444;">
-                                🎲 Erguer Mesa
+                            <button type="submit" class="btn btn-danger flex-grow-1 py-2 transition-btn">
+                                <i class="fas fa-dragon"></i> Erguer Mesa
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
             
-            <div class="text-center mt-3 text-muted small">
-                <i class="fas fa-shield-halved text-danger"></i> Como Mestre, apenas você terá controle total sobre as configurações e auditorias desta mesa.
+            <!-- Dica final -->
+            <div class="alert alert-secondary mt-3 text-center">
+                <i class="fas fa-shield-halved text-danger"></i>
+                <small>Como Mestre, você terá controle total sobre as configurações, auditorias e rollbacks da mesa!</small>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* Injeção de comportamento visual nos inputs do Django Form */
-    .form-control {
-        background-color: #111111 !important;
+    /* Estilização dos inputs */
+    .form-control, .form-select {
+        background-color: #2a2a2a !important;
         color: #ffffff !important;
-        border: 1px solid #444444 !important;
-        transition: 0.2s ease-in-out;
+        border: 1px solid #555 !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        transition: all 0.2s ease;
     }
-    .form-control:focus {
-        background-color: #151515 !important;
-        color: #ffffff !important;
+    
+    .form-control:focus, .form-select:focus {
         border-color: #ffcc00 !important;
-        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.2) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+        background-color: #1a1a1a !important;
+        transform: translateY(-2px);
     }
+    
+    textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+    
+    /* Animação do pergaminho */
+    .scroll-icon {
+        animation: scrollWave 2s ease-in-out infinite;
+        display: inline-block;
+    }
+    
+    @keyframes scrollWave {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+    }
+    
+    /* Preview da Mesa */
+    .preview-mesa {
+        padding: 15px;
+        background: #1a1a1a;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .preview-mesa:hover {
+        transform: scale(1.02);
+        background: #2a2a2a;
+        box-shadow: 0 0 15px rgba(139, 0, 0, 0.3);
+    }
+    
+    /* Badges de Sugestão */
+    .suggestion-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #2a2a2a;
+        border: 1px solid #8b0000;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .suggestion-badge:hover {
+        background: #8b0000;
+        transform: translateY(-2px);
+        border-color: #ffcc00;
+    }
+    
+    /* Estatísticas Preview */
+    .stats-preview {
+        margin-top: 10px;
+    }
+    
+    /* Botões */
     .transition-btn {
-        transition: transform 0.2s;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        font-weight: 600;
     }
+    
     .transition-btn:hover {
-        transform: translateX(-3px);
+        transform: translateY(-2px);
+        filter: brightness(1.05);
+    }
+    
+    /* Efeito de brilho no card */
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+        overflow: hidden;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Indicador de status */
+    .fa-circle {
+        font-size: 0.6rem;
+        vertical-align: middle;
+    }
+    
+    /* Descrição preview */
+    #preview-descricao {
+        font-size: 0.75rem;
+        max-height: 60px;
+        overflow-y: auto;
     }
 </style>
+
+<script>
+    // Preview em tempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        const tituloInput = document.querySelector('input[name="titulo"]');
+        const descricaoInput = document.querySelector('textarea[name="descricao"]');
+        
+        const previewTitulo = document.getElementById('preview-titulo');
+        const previewDescricao = document.getElementById('preview-descricao');
+        const previewContainer = document.getElementById('preview-mesa');
+        
+        function atualizarPreview() {
+            const titulo = tituloInput?.value || 'Título da Campanha';
+            const descricao = descricaoInput?.value || 'Sem descrição ainda. Escreva sobre sua campanha!';
+            
+            previewTitulo.textContent = titulo;
+            
+            // Atualizar ou criar elemento de descrição
+            if (!document.getElementById('preview-descricao')) {
+                const descElement = document.createElement('div');
+                descElement.id = 'preview-descricao';
+                descElement.className = 'small text-muted mt-2';
+                descElement.style.maxHeight = '60px';
+                descElement.style.overflowY = 'auto';
+                previewContainer.appendChild(descElement);
+            }
+            const descElement = document.getElementById('preview-descricao');
+            descElement.innerHTML = `<i class="fas fa-book"></i> ${descricao.substring(0, 100)}${descricao.length > 100 ? '...' : ''}`;
+            
+            // Animação sutil
+            previewContainer.classList.add('animate__animated', 'animate__pulse');
+            setTimeout(() => {
+                previewContainer.classList.remove('animate__animated', 'animate__pulse');
+            }, 300);
+        }
+        
+        // Sugestões clicáveis
+        document.querySelectorAll('.suggestion-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                const titulo = this.dataset.titulo;
+                if (tituloInput) {
+                    tituloInput.value = titulo;
+                    atualizarPreview();
+                    
+                    // Feedback visual
+                    this.style.background = '#8b0000';
+                    setTimeout(() => {
+                        this.style.background = '#2a2a2a';
+                    }, 200);
+                }
+            });
+        });
+        
+        if (tituloInput) tituloInput.addEventListener('input', atualizarPreview);
+        if (descricaoInput) descricaoInput.addEventListener('input', atualizarPreview);
+        
+        atualizarPreview();
+    });
+</script>
 {% endblock %}

@@ -1,19 +1,25 @@
 {% extends 'lobby/base.html' %}
 
+{% block title %}Forjar Novo Item{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5 animate__animated animate__fadeIn">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg border-0 bg-dark text-white" style="border-radius: 10px;">
-                <div class="card-header text-center border-0 p-4" style="background-color: #111111; border-bottom: 2px solid #ffcc00 !important; border-top-left-radius: 10px; border-top-right-radius: 10px;">
-                    <h3 class="mb-0 text-warning" style="font-family: 'Georgia', serif; letter-spacing: 1px;">
-                        ⚔️ Forjar Novo Equipamento
-                    </h3>
-                    <small class="text-muted">Adicione um artefato místico, arma ou item de suporte à biblioteca global da taverna</small>
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <!-- Cabeçalho com efeito de ferraria -->
+                <div class="card-header bg-danger text-white text-center py-4" style="background: linear-gradient(135deg, #8b0000, #5a0000);">
+                    <div class="forge-icon mb-2">
+                        <i class="fas fa-hammer fa-3x animate__animated animate__pulse animate__infinite"></i>
+                    </div>
+                    <h2 class="mb-0 fw-bold" style="font-family: 'Cinzel', 'Georgia', serif;">
+                        <i class="fas fa-gavel"></i> Forjar Novo Equipamento
+                    </h2>
+                    <small class="text-light">Adicione um artefato místico à biblioteca da taverna</small>
                 </div>
                 
-                <div class="card-body p-4 bg-secondary bg-opacity-10">
-                    <form method="POST" novalidate>
+                <div class="card-body p-4">
+                    <form method="POST" novalidate id="item-form">
                         {% csrf_token %}
                         
                         {% if form.non_field_errors %}
@@ -23,105 +29,311 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
-
-                        <div class="mb-4 text-start">
-                            <label for="{{ form.nome.id_for_label }}" class="form-label text-warning small fw-bold">
-                                <i class="fas fa-gavel"></i> Nome do Artefato / Item:
-                            </label>
-                            {{ form.nome }}
-                            {% if form.nome.errors %}
-                                <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                    {% for error in form.nome.errors %}
-                                        <i class="fas fa-circle-exclamation"></i> {{ error }}
-                                    {% endfor %}
+                        
+                        <div class="row">
+                            <div class="col-md-7">
+                                <!-- Nome do Item -->
+                                <div class="mb-4">
+                                    <label for="{{ form.nome.id_for_label }}" class="form-label text-warning fw-bold">
+                                        <i class="fas fa-tag"></i> {{ form.nome.label }}
+                                    </label>
+                                    {{ form.nome }}
+                                    {% if form.nome.help_text %}
+                                        <small class="text-muted d-block mt-1">{{ form.nome.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.nome.errors %}
+                                        <div class="text-danger small mt-1">{{ form.nome.errors }}</div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
+                                
+                                <!-- Raridade -->
+                                <div class="mb-4">
+                                    <label for="{{ form.raridade.id_for_label }}" class="form-label text-warning fw-bold">
+                                        <i class="fas fa-gem"></i> {{ form.raridade.label }}
+                                    </label>
+                                    {{ form.raridade }}
+                                    {% if form.raridade.errors %}
+                                        <div class="text-danger small mt-1">{{ form.raridade.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Peso -->
+                                <div class="mb-4">
+                                    <label for="{{ form.peso.id_for_label }}" class="form-label text-warning fw-bold">
+                                        <i class="fas fa-weight-hanging"></i> {{ form.peso.label }} (kg)
+                                    </label>
+                                    {{ form.peso }}
+                                    {% if form.peso.errors %}
+                                        <div class="text-danger small mt-1">{{ form.peso.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-5">
+                                <!-- Preview do Item -->
+                                <div class="card bg-secondary bg-opacity-25 border-warning mb-3">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-warning mb-2">
+                                            <i class="fas fa-eye"></i> Preview do Item
+                                        </h6>
+                                        <div id="preview-item" class="preview-item">
+                                            <i class="fas fa-gem fa-3x text-muted mb-2"></i>
+                                            <div id="preview-nome" class="fw-bold text-light">Nome do Item</div>
+                                            <div id="preview-raridade" class="small text-muted">Raridade</div>
+                                            <div id="preview-peso" class="small text-muted">0 kg</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Dica de Raridade -->
+                                <div class="alert alert-dark small">
+                                    <i class="fas fa-info-circle text-warning"></i>
+                                    <strong>Raridades:</strong><br>
+                                    📦 Comum | ✨ Incomum | ⭐ Raro | 🌟 Épico | 🏆 Lendário
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="mb-4 text-start">
-                            <label for="{{ form.descricao.id_for_label }}" class="form-label text-warning small fw-bold">
-                                <i class="fas fa-wand-magic-sparkles"></i> Propriedades Místicas e Efeitos:
+                        
+                        <!-- Descrição -->
+                        <div class="mb-4">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label text-warning fw-bold">
+                                <i class="fas fa-scroll"></i> {{ form.descricao.label }}
                             </label>
                             {{ form.descricao }}
                             {% if form.descricao.errors %}
-                                <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                    {% for error in form.descricao.errors %}
-                                        <i class="fas fa-circle-exclamation"></i> {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <div class="text-danger small mt-1">{{ form.descricao.errors }}</div>
                             {% endif %}
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-4 text-start">
-                                <label for="{{ form.raridade.id_for_label }}" class="form-label text-warning small fw-bold">
-                                    <i class="fas fa-gem"></i> Classificação de Raridade:
-                                </label>
-                                {{ form.raridade }}
-                                {% if form.raridade.errors %}
-                                    <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                        {% for error in form.raridade.errors %}
-                                            <i class="fas fa-circle-exclamation"></i> {{ error }}
-                                        {% endfor %}
+                        
+                        <!-- Exemplos de Itens -->
+                        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+                            <div class="card-body">
+                                <h6 class="text-warning mb-3">
+                                    <i class="fas fa-lightbulb"></i> Exemplos de Itens Épicos
+                                </h6>
+                                <div class="row g-2 small">
+                                    <div class="col-6">
+                                        <div class="example-item p-2 rounded" data-nome="Espada Solar" data-raridade="Lendário" data-peso="3.5">
+                                            ⚔️ Espada Solar (Lendário)
+                                        </div>
                                     </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="col-md-6 mb-4 text-start">
-                                <label for="{{ form.peso.id_for_label }}" class="form-label text-warning small fw-bold">
-                                    <i class="fas fa-weight-hanging"></i> Peso do Equipamento (kg):
-                                </label>
-                                {{ form.peso }}
-                                {% if form.peso.errors %}
-                                    <div class="text-danger small mt-1 animate__animated animate__fadeIn">
-                                        {% for error in form.peso.errors %}
-                                            <i class="fas fa-circle-exclamation"></i> {{ error }}
-                                        {% endfor %}
+                                    <div class="col-6">
+                                        <div class="example-item p-2 rounded" data-nome="Anel da Invisibilidade" data-raridade="Raro" data-peso="0.1">
+                                            💍 Anel da Invisibilidade (Raro)
+                                        </div>
                                     </div>
-                                {% endif %}
+                                    <div class="col-6">
+                                        <div class="example-item p-2 rounded" data-nome="Poção de Cura" data-raridade="Comum" data-peso="0.5">
+                                            🧪 Poção de Cura (Comum)
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="example-item p-2 rounded" data-nome="Cajado do Arquimago" data-raridade="Épico" data-peso="2.0">
+                                            🏑 Cajado do Arquimago (Épico)
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <hr class="border-secondary my-4">
-
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'dashboard' %}" class="btn btn-outline-light px-4 transition-btn">
-                                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between gap-3 mt-4">
+                            <a href="{% url 'lista_itens' %}" class="btn btn-outline-secondary flex-grow-1 py-2 transition-btn">
+                                <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-warning btn-lg fw-bold px-5 text-dark shadow-sm">
-                                🔥 Forjar Item
+                            <button type="submit" class="btn btn-danger flex-grow-1 py-2 transition-btn">
+                                <i class="fas fa-hammer"></i> Forjar Item
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
             
-            <div class="text-center mt-3 text-muted small">
-                <i class="fas fa-box-open text-warning"></i> Assim que forjado, o equipamento ficará imediatamente disponível no arsenal global para ser adicionado ao inventário de qualquer herói ativo.
+            <!-- Dica final -->
+            <div class="alert alert-secondary mt-3 text-center">
+                <i class="fas fa-info-circle text-warning"></i>
+                <small>Itens lendários são extremamente raros e concedem bônus especiais aos heróis que os equipam!</small>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* Estilização e injeção de classes nos inputs e selects gerados pelo Django Form */
+    /* Estilização dos inputs */
     .form-control, .form-select {
-        background-color: #111111 !important;
+        background-color: #2a2a2a !important;
         color: #ffffff !important;
-        border: 1px solid #444444 !important;
-        transition: 0.2s ease-in-out;
+        border: 1px solid #555 !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        transition: all 0.2s ease;
     }
+    
     .form-control:focus, .form-select:focus {
-        background-color: #151515 !important;
-        color: #ffffff !important;
         border-color: #ffcc00 !important;
-        box-shadow: 0 0 0 0.25rem rgba(255, 204, 0, 0.2) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+        background-color: #1a1a1a !important;
+        transform: translateY(-2px);
     }
+    
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    /* Animação do martelo */
+    .forge-icon {
+        animation: hammerSwing 2s ease-in-out infinite;
+        display: inline-block;
+    }
+    
+    @keyframes hammerSwing {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(15deg); }
+    }
+    
+    /* Preview do Item */
+    .preview-item {
+        padding: 15px;
+        background: #1a1a1a;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .preview-item:hover {
+        transform: scale(1.02);
+        background: #2a2a2a;
+    }
+    
+    /* Exemplos clicáveis */
+    .example-item {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #1a1a1a;
+    }
+    
+    .example-item:hover {
+        background: #8b0000;
+        transform: translateX(5px);
+        color: #fff;
+    }
+    
+    /* Botões */
     .transition-btn {
-        transition: transform 0.2s;
+        transition: all 0.2s ease;
+        border-radius: 8px;
     }
+    
     .transition-btn:hover {
-        transform: translateX(-3px);
+        transform: translateY(-2px);
+        filter: brightness(1.05);
     }
+    
+    /* Efeito de brilho no card */
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+        overflow: hidden;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Badge de raridade no preview */
+    .rarity-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    .rarity-comum { background: #666; }
+    .rarity-incomum { background: #4caf50; }
+    .rarity-raro { background: #2196f3; }
+    .rarity-epico { background: #9c27b0; }
+    .rarity-lendario { background: #ff9800; color: #000; }
 </style>
+
+<script>
+    // Preview em tempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        const nomeInput = document.querySelector('input[name="nome"]');
+        const raridadeSelect = document.querySelector('select[name="raridade"]');
+        const pesoInput = document.querySelector('input[name="peso"]');
+        
+        const previewNome = document.getElementById('preview-nome');
+        const previewRaridade = document.getElementById('preview-raridade');
+        const previewPeso = document.getElementById('preview-peso');
+        const previewContainer = document.getElementById('preview-item');
+        
+        function atualizarPreview() {
+            const nome = nomeInput?.value || 'Nome do Item';
+            const raridade = raridadeSelect?.options[raridadeSelect.selectedIndex]?.text.split(' ').pop() || 'Raridade';
+            const peso = pesoInput?.value || '0';
+            
+            previewNome.textContent = nome;
+            
+            // Mapeamento de ícones por raridade
+            let raridadeIcon = '';
+            let raridadeClass = '';
+            if (raridade.includes('Comum')) { raridadeIcon = '📦'; raridadeClass = 'rarity-comum'; }
+            else if (raridade.includes('Incomum')) { raridadeIcon = '✨'; raridadeClass = 'rarity-incomum'; }
+            else if (raridade.includes('Raro')) { raridadeIcon = '⭐'; raridadeClass = 'rarity-raro'; }
+            else if (raridade.includes('Épico')) { raridadeIcon = '🌟'; raridadeClass = 'rarity-epico'; }
+            else if (raridade.includes('Lendário')) { raridadeIcon = '🏆'; raridadeClass = 'rarity-lendario'; }
+            
+            previewRaridade.innerHTML = `<span class="rarity-badge ${raridadeClass}">${raridadeIcon} ${raridade}</span>`;
+            previewPeso.textContent = `⚖️ ${peso} kg`;
+            
+            // Animação sutil no preview
+            previewContainer.classList.add('animate__animated', 'animate__pulse');
+            setTimeout(() => {
+                previewContainer.classList.remove('animate__animated', 'animate__pulse');
+            }, 300);
+        }
+        
+        if (nomeInput) nomeInput.addEventListener('input', atualizarPreview);
+        if (raridadeSelect) raridadeSelect.addEventListener('change', atualizarPreview);
+        if (pesoInput) pesoInput.addEventListener('input', atualizarPreview);
+        
+        // Exemplos clicáveis
+        document.querySelectorAll('.example-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const nome = this.dataset.nome;
+                const raridade = this.dataset.raridade;
+                const peso = this.dataset.peso;
+                
+                if (nomeInput) nomeInput.value = nome;
+                if (raridadeSelect) {
+                    for (let i = 0; i < raridadeSelect.options.length; i++) {
+                        if (raridadeSelect.options[i].text.includes(raridade)) {
+                            raridadeSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                if (pesoInput) pesoInput.value = peso;
+                
+                atualizarPreview();
+                
+                // Feedback visual
+                this.style.background = '#8b0000';
+                setTimeout(() => {
+                    this.style.background = '#1a1a1a';
+                }, 200);
+            });
+        });
+        
+        atualizarPreview();
+    });
+</script>
 {% endblock %}

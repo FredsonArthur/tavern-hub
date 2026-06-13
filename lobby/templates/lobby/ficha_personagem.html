@@ -1,0 +1,289 @@
+{% extends 'lobby/base.html' %}
+{% load static %}
+
+{% block title %}Ficha de {{ p.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+    <!-- Cabeçalho da Ficha -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark text-white border-warning">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i class="fas fa-id-card"></i> {{ p.nome }}
+                        </h2>
+                        <div>
+                            <span class="badge bg-warning text-dark fs-6">{{ p.raca }}</span>
+                            <span class="badge bg-info fs-6">{{ p.classe }}</span>
+                            <span class="badge bg-danger fs-6">Nível {{ p.nivel }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="text-muted">{{ p.historia|default:"Nenhuma história registrada ainda." }}</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <small class="text-muted">Criado por: {{ p.usuario.username }}</small><br>
+                            <small class="text-muted">Mesa: {{ p.mesa.titulo|default:"Sem mesa" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Atributos Principais -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-dark text-white border-secondary h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-simple"></i> Atributos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-4 text-center">
+                            <div class="attribute-box p-2">
+                                <small class="text-muted">Força</small>
+                                <h3 class="text-warning mb-0">{{ p.forca }}</h3>
+                                <small class="text-success">{{ mod.forca|stringformat:"+d" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 text-center">
+                            <div class="attribute-box p-2">
+                                <small class="text-muted">Destreza</small>
+                                <h3 class="text-warning mb-0">{{ p.destreza }}</h3>
+                                <small class="text-success">{{ mod.destreza|stringformat:"+d" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 text-center">
+                            <div class="attribute-box p-2">
+                                <small class="text-muted">Constituição</small>
+                                <h3 class="text-warning mb-0">{{ p.constituicao }}</h3>
+                                <small class="text-success">{{ mod.constituicao|stringformat:"+d" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 text-center">
+                            <div class="attribute-box p-2">
+                                <small class="text-muted">Inteligência</small>
+                                <h3 class="text-warning mb-0">{{ p.inteligencia }}</h3>
+                                <small class="text-success">{{ mod.inteligencia|stringformat:"+d" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 text-center">
+                            <div class="attribute-box p-2">
+                                <small class="text-muted">Sabedoria</small>
+                                <h3 class="text-warning mb-0">{{ p.sabedoria }}</h3>
+                                <small class="text-success">{{ mod.sabedoria|stringformat:"+d" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 text-center">
+                            <div class="attribute-box p-2">
+                                <small class="text-muted">Carisma</small>
+                                <h3 class="text-warning mb-0">{{ p.carisma }}</h3>
+                                <small class="text-success">{{ mod.carisma|stringformat:"+d" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pontos de Vida e Mana -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-white border-secondary h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Status</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Barra de Vida -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-heart text-danger"></i> Pontos de Vida
+                        </label>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {{ pv_percent|default:0 }}%;" 
+                                 aria-valuenow="{{ p.vida_atual|default:0 }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ p.vida_maxima|default:1 }}">
+                                {{ p.vida_atual|default:0 }} / {{ p.vida_maxima|default:0 }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Barra de Mana (se for conjurador) -->
+                    {% if p.classe in 'Mago,Feiticeiro,Bruxo,Clérigo,Druida,Bardo' %}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-gem text-primary"></i> Pontos de Mana
+                        </label>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {% widthratio p.pontos_mana p.pontos_mana_maximo 100 %}%;" 
+                                 aria-valuenow="{{ p.pontos_mana|default:0 }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ p.pontos_mana_maximo|default:1 }}">
+                                {{ p.pontos_mana|default:0 }} / {{ p.pontos_mana_maximo|default:0 }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Experiência -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-star text-warning"></i> Experiência
+                        </label>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {% widthratio p.xp p.xp_proximo_nivel 100 %}%;">
+                                {{ p.xp|default:0 }} / {{ p.xp_proximo_nivel|default:1 }} XP
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bônus de Proficiência -->
+                    <div class="text-center mt-3">
+                        <span class="badge bg-info fs-6">
+                            <i class="fas fa-dice-d20"></i> Bônus de Proficiência: +{{ proficiencia|default:2 }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventário e Ações -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-box"></i> Inventário</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush bg-dark">
+                        {% for item in p.itens.all %}
+                        <li class="list-group-item bg-dark text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong class="text-warning">{{ item.nome }}</strong>
+                                    <small class="text-muted"> ({{ item.raridade }})</small>
+                                </div>
+                                <span class="badge bg-secondary">{{ item.peso }} kg</span>
+                            </div>
+                            <small class="text-muted">{{ item.descricao|truncatewords:10 }}</small>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item bg-dark text-muted text-center">
+                            Nenhum item no inventário
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="mt-3 text-center">
+                        <a href="{% url 'gerenciar_inventario' p.id %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-plus"></i> Gerenciar Inventário
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-dice"></i> Testes Rápidos</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="btn btn-danger w-100" onclick="rolarAtributo('forca', {{ mod.forca|default:0 }})">
+                                <i class="fas fa-fist-raised"></i> Teste de Força
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-info w-100" onclick="rolarAtributo('destreza', {{ mod.destreza|default:0 }})">
+                                <i class="fas fa-feather-alt"></i> Teste de Destreza
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-success w-100" onclick="rolarAtributo('constituicao', {{ mod.constituicao|default:0 }})">
+                                <i class="fas fa-shield-alt"></i> Teste de Constituição
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-warning w-100" onclick="rolarAtributo('inteligencia', {{ mod.inteligencia|default:0 }})">
+                                <i class="fas fa-brain"></i> Teste de Inteligência
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-secondary w-100" onclick="rolarAtributo('sabedoria', {{ mod.sabedoria|default:0 }})">
+                                <i class="fas fa-eye"></i> Teste de Sabedoria
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-primary w-100" onclick="rolarAtributo('carisma', {{ mod.carisma|default:0 }})">
+                                <i class="fas fa-comments"></i> Teste de Carisma
+                            </button>
+                        </div>
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left"></i> Voltar ao Lobby
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .attribute-box {
+        background: #1a1a1a;
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+    .attribute-box:hover {
+        transform: translateY(-3px);
+        background: #2a2a2a;
+    }
+    .progress {
+        background-color: #2a2a2a;
+    }
+</style>
+
+<script>
+    function rolarAtributo(atributo, modificador) {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        const total = roll + modificador;
+        
+        let mensagem = `🎲 Teste de ${atributo.charAt(0).toUpperCase() + atributo.slice(1)}:\n`;
+        mensagem += `Rolagem: ${roll}\n`;
+        mensagem += `Modificador: ${modificador >= 0 ? '+' : ''}${modificador}\n`;
+        mensagem += `━━━━━━━━━━━━━━━━━━━━\n`;
+        mensagem += `🎯 Total: ${total}`;
+        
+        if (roll === 20) {
+            mensagem = `🎉 CRÍTICO! 🎉\n\n${mensagem}`;
+            alert(mensagem);
+        } else if (roll === 1) {
+            mensagem = `💀 FALHA CRÍTICA! 💀\n\n${mensagem}`;
+            alert(mensagem);
+        } else if (total >= 15) {
+            mensagem = `✅ SUCESSO!\n\n${mensagem}`;
+            alert(mensagem);
+        } else if (total >= 10) {
+            mensagem = `⚠️ SUCESSO PARCIAL\n\n${mensagem}`;
+            alert(mensagem);
+        } else {
+            mensagem = `❌ FALHA\n\n${mensagem}`;
+            alert(mensagem);
+        }
+    }
+</script>
+{% endblock %}
