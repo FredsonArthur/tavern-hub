@@ -5,271 +5,96 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.13+-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
 
 ---
 
-## 📖 Sobre o Projeto
+## 🏰 Sobre o Projeto
 
-**TavernHub** é uma plataforma robusta para gerenciamento de sessões de RPG, focada em rastreabilidade de dados e comunicação em tempo real entre componentes. O sistema utiliza uma arquitetura baseada em **Django** e um **microsserviço de persistência paralelo (Node.js)**, integrados via **RabbitMQ** para garantir consistência e desacoplamento.
+**TavernHub** é uma plataforma completa para gerenciamento de sessões de RPG, com rolagem de dados, chat em tempo real, combates, missões e painel de controle para o mestre.
 
 > 🎲 *"Que os dados estejam sempre a seu favor!"*
 
 ---
 
-## 🏗️ Arquitetura do Sistema
-```
-+-----------------------------------------------------------------------------------+
-| 🌐 USUÁRIOS (Browser) |
-+----------------------------------------+------------------------------------------+
-|
-v
-+----------------------------------------+------------------------------------------+
-| 🐍 Django (Web - Gunicorn) |
-| +------------+ +------------+ +------------+ +------------+ |
-| |🔐 Login | |👥 Persona- | |🏰 Mesas | |📦 Itens | |
-| | /Registro | | gens | | (CRUD) | | (M2M) | |
-| +------------+ +------------+ +------------+ +------------+ |
-| | | |
-| v v |
-| +--------------------+ +--------------------+ |
-| | 💾 Cache | | 📨 RabbitMQ | |
-| | (Database) | | Publisher | |
-| +--------------------+ +---------+----------+ |
-+--------------------------------------------------------+----------------------------+
-|
-v
-+--------------------------------------------------------+----------------------------+
-| 🟢 Microsserviço Node.js (Consumer) |
-| - Escuta filas RabbitMQ |
-| - Persiste logs de rolagens |
-| - Auditoria e rollback |
-+--------------------------------------------------------+----------------------------+
-|
-v
-+--------------------------------------------------------+----------------------------+
-| 🐘 PostgreSQL (Dados Persistentes) |
-+-------------------------------------------------------------------------------------+
-```
----
-
-## 🛠️ Tecnologias Utilizadas
-
-| Categoria | Tecnologia | Versão | Ícone |
-|-----------|------------|--------|-------|
-| **Backend** | Django | 5.2+ | 🐍 |
-| **Backend** | Python | 3.13+ | 🐍 |
-| **Microsserviço** | Node.js | 20+ | 🟢 |
-| **Mensageria** | RabbitMQ | 3.13+ | 📨 |
-| **Banco de Dados** | PostgreSQL | 15+ | 🐘 |
-| **Cache** | Database Cache | - | 💾 |
-| **Frontend** | Bootstrap | 5.3 | 🎨 |
-| **Frontend** | FontAwesome | 6.0 | ✨ |
-| **Frontend** | Animate.css | 4.1 | 🎬 |
-| **Autenticação** | Django Auth | - | 🔐 |
-| **CI/CD** | GitHub Actions | - | ⚡ |
-| **Deploy** | Render / AWS | - | ☁️ |
-
----
-
 ## ✨ Funcionalidades
 
-### 🎲 Sistema de Rolagens
-- Rolagem de dados (D4, D6, D8, D10, D12, D20) com animações
-- Publicação de eventos via RabbitMQ (Pub/Sub)
-- Log em tempo real com WebSocket
-
-### 👥 Gerenciamento de Personagens
-- **Atributos completos**: Força, Destreza, Constituição, Inteligência, Sabedoria, Carisma
-- **Modificadores automáticos** baseados nas regras D&D
-- **Sistema de XP** e progressão de nível
-- **Soft Delete** - exclusão lógica com possibilidade de restauração
-
-### 🏰 Mesas de RPG
-- CRUD completo de campanhas
-- Estatísticas de personagens e rolagens por mesa
-- Painel do Mestre com controle de auditoria
-
-### 📦 Inventário e Itens
-- Sistema **Many-to-Many** para equipamentos
-- 5 níveis de raridade: Comum, Incomum, Raro, Épico, Lendário
-- Cálculo de peso total e distribuição por raridade
-
-### 📊 Estatísticas e Cache
-- Painel com métricas agregadas (total, média, recorde)
-- **Cache de baixo nível** para otimização de consultas
-- Ranking de jogadores mais ativos
-
-### 🔄 Auditoria e Rollback
-- Histórico completo de rolagens
-- Correção de resultados com registro de motivo
-- Marcação de "Editado por Mestre" nas crônicas
-
-### 🔐 Autenticação
-- Cadastro e login de usuários
-- Validação de senha com requisitos de segurança
-- Proteção de rotas com `@login_required`
+| Categoria | Funcionalidades |
+|-----------|-----------------|
+| 🎲 **Rolagens** | D4 a D20, críticos, rollback com auditoria, RabbitMQ |
+| 👥 **Personagens** | Atributos, XP, níveis, soft delete, inventário M2M |
+| 🏰 **Mesas** | CRUD completo, chat por mesa, estatísticas |
+| ⚔️ **Combate** | Turnos, iniciativa, ações, monstros, histórico |
+| 📋 **Missões** | Criação, progresso individual, recompensas |
+| 👑 **Mestre** | Dashboard, cura/dano, visão geral da mesa |
+| 🔔 **Notificações** | Alertas em tempo real, badge de não lidas |
+| 💬 **Chat** | WebSockets, comandos `/rolar`, mensagens em tempo real |
 
 ---
 
-## 🚀 Guia de Configuração (Quick Start)
+## 🛠️ Tecnologias
 
-### 1️⃣ Pré-requisitos
+| Categoria | Tecnologias |
+|-----------|-------------|
+| 🐍 **Backend** | Python 3.13+, Django 5.2+, Django Channels |
+| 🟢 **Microsserviço** | Node.js 20+, amqplib |
+| 📨 **Mensageria** | RabbitMQ 3.13+, Pika |
+| 🗄️ **Banco de Dados** | PostgreSQL 15+, SQLite, Redis |
+| 🎨 **Frontend** | Bootstrap 5.3, FontAwesome 6, Animate.css |
+| ⚡ **Infra** | GitHub Actions, Docker, Gunicorn, Daphne |
 
-Certifique-se de ter instalado no sistema:
+---
 
-| Requisito | Versão | Comando para verificar |
-|-----------|--------|------------------------|
-| 🐍 Python | 3.13+ | `python --version` |
-| 🟢 Node.js | 20+ | `node --version` |
-| 📨 RabbitMQ | 3.13+ | `rabbitmqctl status` |
-| 🐘 PostgreSQL | 15+ | `psql --version` |
+## 🚀 Guia de Configuração
 
-### 2️⃣ Configurar o Broker RabbitMQ
+### Pré-requisitos
+- Python 3.13+, Node.js 20+, RabbitMQ 3.13+, PostgreSQL 15+, Redis 7+
 
-```bash
-# Ative e inicialize o serviço
-sudo systemctl enable rabbitmq-server
-sudo systemctl start rabbitmq-server
+### Passo a passo
 
-# Verifique o status
-sudo systemctl status rabbitmq-server
-```
-## Ambiente Python & Django
-### Clone o repositório
-```
-git clone https://github.com/FredsonArthur/tavern-hub.git
-cd tavern-hub
-```
+# 1. Clone e entre no projeto
+     git clone https://github.com/FredsonArthur/tavern-hub.git
+     cd tavern-hub
 
-### Crie e ative o ambiente virtual
-```
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate   # Windows
-```
+# 2. Crie ambiente virtual e instale dependências
+     python -m venv venv
+     source venv/bin/activate
+     pip install -r requirements.txt
 
-### Instale as dependências
-```
-pip install -r requirements.txt
-```
+# 3. Configure variáveis de ambiente
+     cp .env.example .env
+# Edite o .env com suas configurações
 
-### Configure variáveis de ambiente (copie o exemplo)
-```
-cp .env.example .env
-```
-### Edite o .env com suas configurações
+# 4. Execute migrações e crie superusuário
+     python manage.py migrate
+     python manage.py createcachetable
+     python manage.py createsuperuser
 
-### Execute as migrações
-```
-python manage.py migrate
-python manage.py createcachetable
-```
+# 5. Inicie o RabbitMQ e Redis
+     sudo systemctl start rabbitmq-server
+     sudo systemctl start redis-server
 
-### Crie um superusuário (administrador)
-```
-python manage.py createsuperuser
-```
+# 6. Rode o microsserviço (em outro terminal)
+     cd microservico-pubsub
+     npm install
+     node consumer.js
 
-### Configurar Banco de Dados (PostgreSQL)
-### Usando Docker (recomendado)
-```
-docker-compose up -d
-```
+# 7. Rode o servidor Django
+     daphne -p 8000 core.asgi:application
+     Acesse: http://127.0.0.1:8000/
+## 🧪 Testes
+     python manage.py test
+## 🤝 Contribuição
 
-### Ou configure manualmente no .env
-### DATABASE_URL=postgresql://usuario:senha@localhost:5432/tavernhub
+    Faça um fork do projeto
 
-### Microsserviço de Persistência (Store)
-### Abra um novo terminal
-```
-cd microservico-pubsub
-npm install
-npm start
-```
-### ou
-```
-node consumer.js
-```
+    Crie uma branch para sua feature (git checkout -b feature/AmazingFeature)
 
-### Execução do Servidor Web
-### No terminal principal (venv ativa)
-```
-python manage.py runserver
-```
+    Commit suas mudanças (git commit -m 'Add some AmazingFeature')
 
-## 🧪 Suíte de Testes
-Para validar a integridade estrutural e evitar regressões:
-### Executar todos os testes
-```
-python manage.py test
-```
+    Push para a branch (git push origin feature/AmazingFeature)
 
-### Testes específicos do app lobby
-```
-python manage.py test lobby
-```
-
-### Com maior verbosidade
-```
-python manage.py test --verbosity=2
-```
-
-## 📁 Estrutura do Projeto
-```
-tavern-hub/
-├── core/                    # Configurações Django
-│   ├── settings.py          # Configurações (com suporte a .env)
-│   ├── urls.py              # Rotas principais
-│   └── asgi.py / wsgi.py    # Servidores ASGI/WSGI
-├── lobby/                   # App principal
-│   ├── models.py            # Entidades: Mesa, Personagem, Item, Rolagem
-│   ├── views.py             # CRUD + APIs + Cache + Rollback
-│   ├── forms.py             # Formulários com choices
-│   ├── signals.py           # Sinais (críticos, maré de azar)
-│   ├── messaging.py         # Publisher RabbitMQ
-│   └── templates/lobby/     # 15+ templates estilizados
-├── microservico-pubsub/     # Microsserviço Node.js
-│   ├── consumer.js          # Consumidor RabbitMQ
-│   └── package.json
-├── static/                  # Arquivos estáticos
-├── .env.example             # Exemplo de variáveis de ambiente
-├── docker-compose.yml       # PostgreSQL + RabbitMQ
-├── requirements.txt         # Dependências Python
-└── README.md                # Este arquivo
-```
-
-## 📊 Diagrama ER (Entidades)
-```
-+-------------+     +-------------+     +-------------+
-|    User     |     |    Mesa     |     | Personagem  |
-+-------------+     +-------------+     +-------------+
-| id (PK)     |-----<| id (PK)     |     | id (PK)     |
-| username    |     | titulo      |-----<| nome        |
-| email       |     | descricao   |     | raca        |
-| password    |     | mestre (FK) |     | classe      |
-+-------------+     | data_criacao|     | nivel       |
-                    +-------------+     | forca       |
-                                        | destreza    |
-+-------------+     +-------------+     | constituicao|
-|    Item     |     |  Rolagem    |     | inteligencia|
-+-------------+     +-------------+     | sabedoria   |
-| id (PK)     |     | id (PK)     |     | carisma     |
-| nome        |     | resultado   |     | vida_atual  |
-| raridade    |     | tipo_dado   |     | xp          |
-| peso        |     | editado     |     | ativo (SD)  |
-| ativo (SD)  |     | motivo      |     +-------------+
-+-------------+     +-------------+
-     |                    |
-     | (M2M)              | (FK)
-     v                    v
-+---------------------------------------------------+
-|                personagem_itens                   |
-|            (Tabela pivô Many-to-Many)             |
-+---------------------------------------------------+
-```
-
+    Abra um Pull Request
+---
 ## 📝 Licença
 
-Projeto desenvolvido para fins acadêmicos e demonstração de arquitetura Pub/Sub com Django e Node.js.
+     Projeto desenvolvido para fins acadêmicos e demonstração de arquitetura Pub/Sub com Django e Node.js.
