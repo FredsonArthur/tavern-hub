@@ -1,0 +1,173 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}Minhas Mesas - TavernHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning mb-0" style="font-family: 'Cinzel', 'Georgia', serif;">
+                <i class="fas fa-dragon"></i> Minhas Mesas
+            </h2>
+            <p class="text-muted small mt-1">Campanhas que você mestra na taverna</p>
+        </div>
+        <a href="{% url 'criar_mesa' %}" class="btn btn-danger btn-lg shadow">
+            <i class="fas fa-plus-circle"></i> Nova Mesa
+        </a>
+    </div>
+
+    <!-- Lista de Mesas -->
+    <div class="row">
+        {% for mesa in mesas %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card bg-dark text-white border-danger h-100 shadow-lg hover-card">
+                    <!-- Cabeçalho com ID e Data -->
+                    <div class="card-header bg-danger bg-opacity-25 d-flex justify-content-between align-items-center" 
+                         style="border-bottom: 2px solid #ffcc00;">
+                        <span class="badge bg-danger">
+                            <i class="fas fa-tag"></i> ID #{{ mesa.id }}
+                        </span>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-alt"></i> {{ mesa.data_criacao|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Ícone da Mesa -->
+                        <div class="mesa-icon text-center mb-3">
+                            <i class="fas fa-dungeon fa-3x text-danger"></i>
+                        </div>
+                        
+                        <!-- Título -->
+                        <h4 class="card-title text-warning text-center mb-3">{{ mesa.titulo }}</h4>
+                        
+                        <!-- Descrição -->
+                        <p class="card-text text-muted small mb-3">
+                            {{ mesa.descricao|default:"Sem descrição disponível para esta mesa."|truncatewords:15 }}
+                        </p>
+                        
+                        <!-- Estatísticas da Mesa -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="stat-box text-center p-2 rounded">
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-users text-success"></i> Personagens
+                                    </small>
+                                    <strong class="text-info fs-5">{{ mesa.personagens.count }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box text-center p-2 rounded">
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-dice-d20 text-warning"></i> Rolagens
+                                    </small>
+                                    <strong class="text-info fs-5">{{ mesa.rolagem_set.count }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Mestre -->
+                        <div class="text-center mb-3">
+                            <span class="badge bg-danger">
+                                <i class="fas fa-crown"></i> Mestre: {{ mesa.mestre.username }}
+                            </span>
+                        </div>
+                        
+                        <!-- Botões de Ação -->
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'iniciar_combate' mesa.id %}" class="btn btn-danger btn-sm">
+                                <i class="fas fa-swords"></i> ⚔️ Iniciar Combate
+                            </a>
+                            <a href="{% url 'chat_mesa' mesa.id %}" class="btn btn-info btn-sm">
+                                <i class="fas fa-comments"></i> 💬 Chat da Mesa
+                            </a>
+                            <a href="{% url 'lista_missoes' mesa.id %}" class="btn btn-warning btn-sm text-dark">
+                                <i class="fas fa-scroll"></i> 📋 Missões
+                            </a>
+                            <a href="{% url 'dashboard_mestre' mesa.id %}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-crown"></i> 👑 Painel do Mestre
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent border-secondary text-center">
+                        <small class="text-muted">
+                            {% if mesa.combates.filter.ativo %}
+                                <span class="text-danger">⚔️ Combate ativo!</span>
+                            {% else %}
+                                <span class="text-muted">⏳ Aguardando batalha</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="card bg-dark text-white border-secondary text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-dungeon fa-4x text-muted mb-3"></i>
+                        <p class="text-muted fs-4">Você ainda não mestreia nenhuma mesa de RPG.</p>
+                        <p class="text-secondary">Crie sua primeira campanha e comece a aventura!</p>
+                        <a href="{% url 'criar_mesa' %}" class="btn btn-danger mt-3">
+                            <i class="fas fa-plus-circle"></i> Fundar Nova Mesa
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Botão Voltar -->
+    <div class="text-center mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+        </a>
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(139, 0, 0, 0.4) !important;
+        border-color: #ffcc00 !important;
+    }
+    
+    .mesa-icon {
+        transition: transform 0.2s ease;
+    }
+    
+    .hover-card:hover .mesa-icon {
+        transform: scale(1.1);
+    }
+    
+    .stat-box {
+        background: rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
+    }
+    
+    .hover-card:hover .stat-box {
+        background: rgba(139, 0, 0, 0.3);
+    }
+    
+    .card {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

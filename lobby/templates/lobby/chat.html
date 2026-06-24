@@ -1,0 +1,201 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}Chat da Mesa - {{ mesa.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-warning mb-0">
+                <i class="fas fa-comments"></i> Chat da Mesa
+            </h3>
+            <p class="text-muted small">{{ mesa.titulo }} - Mestre: {{ mesa.mestre.username }}</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_mesas' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <div class="card-header bg-danger bg-opacity-25 d-flex justify-content-between align-items-center" 
+                     style="border-bottom: 2px solid #8b0000;">
+                    <div>
+                        <h6 class="mb-0 text-warning">
+                            <i class="fas fa-users"></i> {{ mesa.personagens.count }} aventureiros
+                        </h6>
+                    </div>
+                    <div>
+                        <span class="badge bg-success" id="status-indicator">
+                            <i class="fas fa-circle"></i> Conectado
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="chat-messages" class="p-3" style="height: 450px; overflow-y: auto; background: #0d0d0d;">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2 d-block"></i>
+                            Conectando ao chat...
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-dark border-secondary">
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="text" id="chat-input" class="form-control bg-dark text-white border-secondary" 
+                                       placeholder="Digite sua mensagem... (/rolar 1d20 para rolar dados)" 
+                                       style="border-right: none;">
+                                <button class="btn btn-danger" id="send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-info" onclick="rolarDadoChat(4)">D4</button>
+                                <button class="btn btn-sm btn-outline-info" onclick="rolarDadoChat(6)">D6</button>
+                                <button class="btn btn-sm btn-outline-info" onclick="rolarDadoChat(8)">D8</button>
+                                <button class="btn btn-sm btn-outline-info" onclick="rolarDadoChat(10)">D10</button>
+                                <button class="btn btn-sm btn-outline-info" onclick="rolarDadoChat(12)">D12</button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="rolarDadoChat(20)">D20</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Use /rolar 1d20 ou clique nos botões de dados
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message-system {
+        color: #ff6b6b;
+        font-style: italic;
+        text-align: center;
+        padding: 4px 0;
+    }
+    .message-user {
+        padding: 6px 12px;
+        margin: 4px 0;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+    }
+    .message-user strong {
+        color: #ffcc00;
+    }
+    .message-roll {
+        background: rgba(139, 0, 0, 0.2);
+        border-left: 3px solid #ffcc00;
+        padding: 8px 12px;
+        margin: 4px 0;
+        border-radius: 4px;
+    }
+    #chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+    #chat-messages::-webkit-scrollbar-track {
+        background: #1a1a1a;
+    }
+    #chat-messages::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 3px;
+    }
+    #chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #666;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mesaId = {{ mesa.id }};
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+
+        // Conectar ao WebSocket
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const wsUrl = wsProtocol + window.location.host + '/ws/chat/' + mesaId + '/';
+        const socket = new WebSocket(wsUrl);
+
+        socket.onopen = function() {
+            statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Conectado';
+            statusIndicator.className = 'badge bg-success';
+        };
+
+        socket.onclose = function() {
+            statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Desconectado';
+            statusIndicator.className = 'badge bg-danger';
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Erro';
+            statusIndicator.className = 'badge bg-danger';
+        };
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            addMessage(data.message, data.username, data.is_system);
+        };
+
+        function addMessage(message, username, isSystem) {
+            const div = document.createElement('div');
+            
+            if (isSystem) {
+                div.className = 'message-system';
+                div.innerHTML = message;
+            } else if (username === '🎲 Dados') {
+                div.className = 'message-roll';
+                div.innerHTML = message.replace(/\n/g, '<br>');
+            } else {
+                div.className = 'message-user';
+                div.innerHTML = `<strong>${username}:</strong> ${message}`;
+            }
+            
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    'message': message
+                }));
+                chatInput.value = '';
+            } else if (!message) {
+                // Ignorar mensagem vazia
+            } else {
+                alert('Desconectado do chat. Recarregue a página.');
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Funções para rolar dados via chat
+        window.rolarDadoChat = function(faces) {
+            chatInput.value = '/rolar 1d' + faces;
+            sendMessage();
+        };
+
+        // Scroll para o final ao carregar
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+</script>
+{% endblock %}

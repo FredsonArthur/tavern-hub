@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',  # <-- ADICIONADO PARA WEBSOCKETS
     'lobby',  # App principal do TavernHub
 ]
 
@@ -46,7 +47,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Corrigido: Path concatenation
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -60,10 +61,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
+ASGI_APPLICATION = 'core.asgi.application'  # <-- ADICIONADO PARA WEBSOCKETS
 
 # --- BANCO DE DADOS ---
-# Suporta PostgreSQL (produção) e SQLite (desenvolvimento)
-# Configure DATABASE_URL no .env ou variável de ambiente
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
@@ -104,7 +104,6 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ] if (BASE_DIR / 'static').exists() else []
 
-# Configuração do WhiteNoise para arquivos estáticos
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -119,24 +118,42 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-# --- CACHE (Requisito viii) ---
-# Usa cache em banco de dados por padrão (mais simples para deploy)
-# Em produção, considere usar Redis: django.core.cache.backends.redis.RedisCache
+# --- CACHE ---
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'tavern_cache_table',
-        'TIMEOUT': 300,  # 5 minutos padrão
+        'TIMEOUT': 300,
         'OPTIONS': {
             'MAX_ENTRIES': 1000,
         }
     }
 }
 
+# ========== CHANNELS (WebSocket) ==========
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# Para produção com Redis Cloud (descomente quando for fazer deploy):
+# import os
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
+#         },
+#     },
+# }
+
 # --- SEGURANÇA ADICIONAL PARA PRODUÇÃO ---
 if not DEBUG:
-    # Configurações de segurança para produção
-    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = True
@@ -146,8 +163,7 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
 
-# --- CONFIGURAÇÕES DO RABBITMQ (Requisito iv) ---
-# Valores padrão para desenvolvimento, sobrescreva no .env
+# --- CONFIGURAÇÕES DO RABBITMQ ---
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = int(os.environ.get('RABBITMQ_PORT', 5672))
 RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
@@ -156,7 +172,6 @@ RABBITMQ_QUEUE = os.environ.get('RABBITMQ_QUEUE', 'cronicas_rolagem')
 RABBITMQ_URL = os.environ.get('RABBITMQ_URL', f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}')
 
 # --- TENTAR IMPORTAR CONFIGURAÇÕES LOCAIS (OPCIONAL) ---
-# Apenas para desenvolvimento, não usar em produção
 try:
     from .local_settings import *
 except ImportError:

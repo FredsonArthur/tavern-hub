@@ -1,0 +1,80 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}Iniciar Combate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning" style="font-family: 'Cinzel', 'Georgia', serif;">
+                <i class="fas fa-swords"></i> Iniciar Combate
+            </h2>
+            <p class="text-muted">Mesa: {{ mesa.titulo }}</p>
+        </div>
+        <a href="{% url 'lista_mesas' %}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-warning shadow-lg">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <i class="fas fa-skull fa-2x mb-2 d-block"></i>
+                    <h4 class="mb-0">Prepare-se para a Batalha!</h4>
+                    <small>Os heróis estão prontos para enfrentar o perigo</small>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-warning fw-bold">
+                                <i class="fas fa-tag"></i> Nome do Combate
+                            </label>
+                            <input type="text" name="nome" class="form-control bg-dark text-white border-secondary" 
+                                   placeholder="Ex: Batalha na Masmorra" value="⚔️ {{ mesa.titulo }}" required>
+                        </div>
+                        
+                        <!-- Participantes -->
+                        <div class="card bg-secondary bg-opacity-25 mb-4">
+                            <div class="card-body">
+                                <h6 class="text-warning mb-3">
+                                    <i class="fas fa-users"></i> Participantes ({{ mesa.personagens.count }})
+                                </h6>
+                                <div class="row g-2">
+                                    {% for p in mesa.personagens.all %}
+                                    <div class="col-6 col-md-4">
+                                        <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
+                                            <i class="fas fa-user-circle text-warning"></i>
+                                            <div>
+                                                <strong class="text-light small">{{ p.nome }}</strong>
+                                                <br>
+                                                <small class="text-muted">Nv. {{ p.nivel }} {{ p.classe }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="col-12 text-center text-muted">
+                                        <i class="fas fa-ghost"></i> Nenhum personagem na mesa
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-swords"></i> Iniciar Batalha!
+                            </button>
+                            <a href="{% url 'lista_mesas' %}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}Criar Missão - {{ mesa.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <!-- Cabeçalho -->
+                <div class="card-header bg-danger text-white text-center py-4" style="background: linear-gradient(135deg, #8b0000, #5a0000);">
+                    <i class="fas fa-scroll fa-3x mb-2 d-block"></i>
+                    <h2 class="mb-0 fw-bold" style="font-family: 'Cinzel', 'Georgia', serif;">
+                        <i class="fas fa-plus-circle"></i> Criar Nova Missão
+                    </h2>
+                    <small class="text-light">Desafie seus aventureiros com uma nova jornada</small>
+                    <p class="text-muted small mt-2">{{ mesa.titulo }}</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Título -->
+                        <div class="mb-4">
+                            <label for="titulo" class="form-label text-warning fw-bold">
+                                <i class="fas fa-tag"></i> Título da Missão
+                            </label>
+                            <input type="text" name="titulo" id="titulo" class="form-control bg-dark text-white border-secondary" 
+                                   placeholder="Ex: A Jornada do Herói" required>
+                        </div>
+                        
+                        <!-- Descrição -->
+                        <div class="mb-4">
+                            <label for="descricao" class="form-label text-warning fw-bold">
+                                <i class="fas fa-book-open"></i> Descrição
+                            </label>
+                            <textarea name="descricao" id="descricao" class="form-control bg-dark text-white border-secondary" 
+                                      rows="3" placeholder="Descreva a missão em detalhes..." required></textarea>
+                        </div>
+                        
+                        <!-- Objetivos -->
+                        <div class="mb-4">
+                            <label for="objetivos" class="form-label text-warning fw-bold">
+                                <i class="fas fa-list-check"></i> Objetivos
+                            </label>
+                            <textarea name="objetivos" id="objetivos" class="form-control bg-dark text-white border-secondary" 
+                                      rows="3" placeholder="Liste os objetivos da missão..."></textarea>
+                            <small class="text-muted">Descreva o que os jogadores precisam fazer para concluir a missão.</small>
+                        </div>
+                        
+                        <!-- Dificuldade e Recompensas -->
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <label for="dificuldade" class="form-label text-warning fw-bold">
+                                    <i class="fas fa-chart-line"></i> Dificuldade
+                                </label>
+                                <select name="dificuldade" id="dificuldade" class="form-select bg-dark text-white border-secondary">
+                                    <option value="facil">🌟 Fácil</option>
+                                    <option value="medio" selected>⚔️ Médio</option>
+                                    <option value="dificil">💀 Difícil</option>
+                                    <option value="epico">🔥 Épico</option>
+                                    <option value="lendario">🏆 Lendário</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <label for="recompensa_xp" class="form-label text-warning fw-bold">
+                                    <i class="fas fa-star"></i> Recompensa XP
+                                </label>
+                                <input type="number" name="recompensa_xp" id="recompensa_xp" class="form-control bg-dark text-white border-secondary" 
+                                       value="50" min="0" step="10">
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <label for="recompensa_ouro" class="form-label text-warning fw-bold">
+                                    <i class="fas fa-coins"></i> Recompensa Ouro
+                                </label>
+                                <input type="number" name="recompensa_ouro" id="recompensa_ouro" class="form-control bg-dark text-white border-secondary" 
+                                       value="20" min="0" step="5">
+                            </div>
+                        </div>
+                        
+                        <!-- Prazo -->
+                        <div class="mb-4">
+                            <label for="prazo" class="form-label text-warning fw-bold">
+                                <i class="fas fa-clock"></i> Prazo (opcional)
+                            </label>
+                            <input type="datetime-local" name="prazo" id="prazo" class="form-control bg-dark text-white border-secondary">
+                            <small class="text-muted">Data limite para concluir a missão. Deixe em branco para sem prazo.</small>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <hr class="border-secondary">
+                        <div class="d-flex justify-content-between gap-3">
+                            <a href="{% url 'lista_missoes' mesa.id %}" class="btn btn-outline-secondary flex-grow-1 py-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger flex-grow-1 py-2">
+                                <i class="fas fa-scroll"></i> Criar Missão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Dica -->
+            <div class="alert alert-secondary mt-3 text-center">
+                <i class="fas fa-info-circle text-warning"></i>
+                <small>Missões épicas e lendárias concedem recompensas maiores, mas são mais difíceis de completar!</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control, .form-select {
+        background-color: #2a2a2a !important;
+        color: #ffffff !important;
+        border: 1px solid #555 !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #ffcc00 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important;
+        background-color: #1a1a1a !important;
+    }
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

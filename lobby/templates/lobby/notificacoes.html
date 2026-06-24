@@ -1,0 +1,141 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}Notificações - TavernHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning mb-0" style="font-family: 'Cinzel', 'Georgia', serif;">
+                <i class="fas fa-bell"></i> Notificações
+            </h2>
+            <p class="text-muted small">Mantenha-se atualizado com os eventos da taverna</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm me-2" onclick="marcarTodasComoLidas()">
+                <i class="fas fa-check-double"></i> Marcar todas como lidas
+            </button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Lista de Notificações -->
+    <div class="card bg-dark text-white border-secondary shadow-lg">
+        <div class="card-header bg-danger bg-opacity-25" style="border-bottom: 2px solid #8b0000;">
+            <span class="text-warning">
+                <i class="fas fa-list"></i> {{ notificacoes.count }} notificações
+                {% if nao_lidas_count > 0 %}
+                <span class="badge bg-danger ms-2">{{ nao_lidas_count }} não lidas</span>
+                {% endif %}
+            </span>
+        </div>
+        <div class="list-group list-group-flush bg-dark">
+            {% for notificacao in notificacoes %}
+            <div class="list-group-item bg-dark text-white border-secondary 
+                {% if not notificacao.lida %}border-start border-danger border-4{% endif %}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <!-- Ícone do tipo -->
+                        <span class="badge me-2 
+                            {% if notificacao.tipo == 'sucesso' %}bg-success
+                            {% elif notificacao.tipo == 'alerta' %}bg-warning text-dark
+                            {% elif notificacao.tipo == 'perigo' %}bg-danger
+                            {% elif notificacao.tipo == 'missao' %}bg-info
+                            {% elif notificacao.tipo == 'combate' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {% if notificacao.tipo == 'sucesso' %}✅
+                            {% elif notificacao.tipo == 'alerta' %}⚠️
+                            {% elif notificacao.tipo == 'perigo' %}🔥
+                            {% elif notificacao.tipo == 'missao' %}📋
+                            {% elif notificacao.tipo == 'combate' %}⚔️
+                            {% else %}ℹ️{% endif %}
+                            {{ notificacao.get_tipo_display }}
+                        </span>
+                        <h6 class="mb-1 d-inline text-light">{{ notificacao.titulo }}</h6>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">{{ notificacao.data_criacao|date:"d/m/Y H:i" }}</small>
+                        {% if not notificacao.lida %}
+                        <span class="badge bg-danger">Nova</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="mb-1 small text-muted mt-2">{{ notificacao.mensagem }}</p>
+                {% if notificacao.link_url %}
+                <a href="{{ notificacao.link_url }}" class="btn btn-sm btn-outline-info mt-2">
+                    <i class="fas fa-arrow-right"></i> {{ notificacao.link_texto|default:"Ver" }}
+                </a>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-bell-slash fa-4x mb-3 d-block"></i>
+                <p class="fs-5">Nenhuma notificação</p>
+                <p>As notificações aparecerão aqui quando houver novidades.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Paginação (se houver mais de 20 notificações) -->
+    {% if notificacoes.count > 20 %}
+    <div class="mt-4">
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item disabled">
+                    <a class="page-link bg-dark text-white border-secondary" href="#">Anterior</a>
+                </li>
+                <li class="page-item active">
+                    <a class="page-link bg-danger border-danger" href="#">1</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link bg-dark text-white border-secondary" href="#">2</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link bg-dark text-white border-secondary" href="#">Próximo</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .list-group-item {
+        transition: all 0.2s ease;
+    }
+    .list-group-item:hover {
+        background-color: rgba(139, 0, 0, 0.15) !important;
+        transform: translateX(5px);
+    }
+    .border-start.border-danger {
+        border-left-width: 4px !important;
+    }
+</style>
+
+<script>
+    function marcarTodasComoLidas() {
+        if (confirm('Marcar todas as notificações como lidas?')) {
+            fetch('/lobby/api/notificacoes/marcar-todas-lidas/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao marcar notificações como lidas.');
+            });
+        }
+    }
+</script>
+{% endblock %}

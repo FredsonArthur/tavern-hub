@@ -1,0 +1,301 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}{{ combate.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="text-warning mb-0">
+                <i class="fas fa-swords"></i> {{ combate.nome }}
+            </h3>
+            <small class="text-muted">
+                Rodada {{ combate.rodada }} |
+                {% if combate.status == 'em_andamento' %}
+                    <span class="text-success">⚔️ Em andamento</span>
+                {% elif combate.status == 'concluido' %}
+                    <span class="text-secondary">✅ Concluído</span>
+                {% else %}
+                    <span class="text-warning">⏳ Preparando</span>
+                {% endif %}
+            </small>
+        </div>
+        <div>
+            <a href="{% url 'lista_mesas' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Sair
+            </a>
+        </div>
+    </div>
+
+    {% if eh_mestre and combate.status == 'em_andamento' %}
+    <div class="card bg-dark border-secondary mb-3">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h6 class="text-warning mb-0">
+                        <i class="fas fa-crown"></i> Painel do Mestre
+                    </h6>
+                    <small class="text-muted">Adicione monstros à batalha</small>
+                </div>
+                <div class="col-md-8">
+                    <form id="add-monstro-form" class="row g-2">
+                        {% csrf_token %}
+                        <div class="col-4">
+                            <input type="text" name="nome" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Nome do monstro" required>
+                        </div>
+                        <div class="col-3">
+                            <input type="number" name="vida" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Vida" value="20" required>
+                        </div>
+                        <div class="col-3">
+                            <input type="number" name="defesa" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Defesa" value="12" required>
+                        </div>
+                        <div class="col-2">
+                            <button type="submit" class="btn btn-danger btn-sm w-100">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+        {% for p in participantes %}
+        <div class="col-md-3 col-6">
+            <div class="card bg-dark text-white border-{% if p.vivo %}success{% else %}danger{% endif %} shadow-lg participant-card" data-id="{{ p.id }}" data-vivo="{{ p.vivo }}">
+                <div class="card-body text-center">
+                    <div class="participant-icon mb-2">
+                        {% if p.tipo == 'heroi' %}
+                            <i class="fas fa-user-circle fa-3x text-warning"></i>
+                        {% else %}
+                            <i class="fas fa-dragon fa-3x text-danger"></i>
+                        {% endif %}
+                    </div>
+                    <h6 class="mb-1 {% if not p.vivo %}text-muted{% endif %}">
+                        {{ p.nome }}
+                        {% if not p.vivo %}💀{% endif %}
+                    </h6>
+                    <small class="text-muted">Iniciativa: {{ p.iniciativa }}</small>
+
+                    <div class="mt-2">
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar {{ p.bar_class }}" role="progressbar" style="width: {% widthratio p.vida_atual p.vida_maxima 100 %}%;">
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ p.vida_atual }}/{{ p.vida_maxima }}</small>
+                    </div>
+
+                    {% if p.condicao != 'normal' %}
+                    <span class="badge bg-warning text-dark mt-1">
+                        <i class="fas fa-exclamation-triangle"></i> {{ p.get_condicao_display }}
+                    </span>
+                    {% endif %}
+
+                    {% if turno_atual and turno_atual.id == p.id and p.vivo %}
+                    <div class="mt-2">
+                        <span class="badge bg-danger animate__animated animate__pulse animate__infinite">
+                            <i class="fas fa-clock"></i> TURNO ATUAL
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center small text-muted">
+                    Defesa: {{ p.defesa }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if combate.status == 'em_andamento' and turno_atual %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark border-warning shadow-lg">
+                <div class="card-header bg-danger bg-opacity-25">
+                    <h6 class="mb-0 text-warning">
+                        <i class="fas fa-dice-d20"></i> Ações do Turno - {{ turno_atual.nome }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            <strong class="text-light">{{ turno_atual.nome }}</strong>
+                            <small class="text-muted d-block">É a sua vez!</small>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-danger btn-sm acao-btn" data-acao="ataque">
+                                    <i class="fas fa-sword"></i> Atacar
+                                </button>
+                                <button class="btn btn-success btn-sm acao-btn" data-acao="cura">
+                                    <i class="fas fa-heart"></i> Curar
+                                </button>
+                                <button class="btn btn-info btn-sm acao-btn" data-acao="defesa">
+                                    <i class="fas fa-shield"></i> Defender
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="alvo-select" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                <option value="">Selecione um alvo...</option>
+                                {% for p in participantes %}
+                                    {% if p.vivo and p.id != turno_atual.id %}
+                                    <option value="{{ p.id }}">{{ p.nome }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="acao-resultado" class="mt-3 text-center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif combate.status == 'concluido' %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-success text-center">
+                <i class="fas fa-trophy fa-2x mb-2 d-block"></i>
+                <h4>⚔️ Combate Concluído!</h4>
+                <p class="mb-0">Todos os inimigos foram derrotados!</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h6 class="mb-0 text-warning">
+                        <i class="fas fa-scroll"></i> Histórico do Combate
+                    </h6>
+                </div>
+                <div class="card-body" id="log-acoes" style="max-height: 200px; overflow-y: auto;">
+                    {% for acao in acoes %}
+                    <div class="log-entry small py-1 border-bottom border-secondary">
+                        <span class="text-muted">[Rodada {{ acao.rodada }}]</span>
+                        <span class="text-info">{{ acao.participante.nome }}</span>
+                        <span class="text-light">{{ acao.resultado }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">
+                        Nenhuma ação registrada ainda
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .participant-card {
+        transition: all 0.3s ease;
+    }
+    .participant-card:hover {
+        transform: translateY(-5px);
+        border-color: #ffcc00 !important;
+    }
+    .log-entry {
+        transition: background 0.2s;
+    }
+    .log-entry:hover {
+        background: rgba(139, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var combateId = {{ combate.id }};
+        var participanteId = {{ turno_atual.id|default:'null' }};
+
+        function executarAcao(acao) {
+            if (!participanteId) {
+                alert('Não é seu turno!');
+                return;
+            }
+
+            var alvoId = document.getElementById('alvo-select')?.value;
+            var resultDiv = document.getElementById('acao-resultado');
+            resultDiv.innerHTML = '<div class="text-muted"><i class="fas fa-spinner fa-spin"></i> Processando ação...</div>';
+
+            fetch('/lobby/combate/' + combateId + '/acao/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'participante_id': participanteId,
+                    'acao': acao,
+                    'alvo_id': alvoId || '',
+                    'descricao': acao + ' realizado'
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    resultDiv.innerHTML = '<div class="alert alert-info animate__animated animate__fadeIn"><i class="fas fa-check-circle"></i> ' + data.resultado + '</div>';
+                    setTimeout(function() { location.reload(); }, 2000);
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger animate__animated animate__shakeX"><i class="fas fa-exclamation-triangle"></i> ' + (data.erro || 'Erro ao executar ação!') + '</div>';
+                }
+            })
+            .catch(function(error) {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Erro: ' + error.message + '</div>';
+            });
+        }
+
+        document.querySelectorAll('.acao-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var acao = this.dataset.acao;
+                executarAcao(acao);
+            });
+        });
+
+        document.getElementById('add-monstro-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            var btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            fetch('/lobby/combate/' + combateId + '/adicionar-monstro/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.erro);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus"></i> Add';
+                }
+            });
+        });
+
+        setInterval(function() {
+            fetch('/lobby/combate/' + combateId + '/status/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.status === 'concluido') {
+                    location.reload();
+                }
+            })
+            .catch(function() {});
+        }, 5000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends 'lobby/base.html' %}
+{% load lobby_filters %}
+
+{% block title %}Missões - {{ mesa.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning mb-0" style="font-family: 'Cinzel', 'Georgia', serif;">
+                <i class="fas fa-scroll"></i> Missões de {{ mesa.titulo }}
+            </h2>
+            <p class="text-muted small mt-1">Aventuras e desafios para os heróis</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_mesas' %}" class="btn btn-outline-light btn-sm me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            {% if eh_mestre %}
+            <a href="{% url 'criar_missao' mesa.id %}" class="btn btn-danger btn-sm">
+                <i class="fas fa-plus-circle"></i> Nova Missão
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card bg-dark text-white border-secondary text-center p-3">
+                <i class="fas fa-scroll fa-2x text-info mb-2"></i>
+                <h5 class="mb-0">{{ missoes.count }}</h5>
+                <small class="text-muted">Total de Missões</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card bg-dark text-white border-secondary text-center p-3">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h5 class="mb-0">{{ missoes|length }}</h5>
+                <small class="text-muted">Em Andamento</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card bg-dark text-white border-secondary text-center p-3">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h5 class="mb-0">{{ missoes|length }}</h5>
+                <small class="text-muted">Concluídas</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card bg-dark text-white border-secondary text-center p-3">
+                <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                <h5 class="mb-0">0</h5>
+                <small class="text-muted">XP Total</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Missões -->
+    <div class="row">
+        {% for missao in missoes %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card bg-dark text-white border-secondary h-100 shadow-lg hover-card">
+                <!-- Cabeçalho com status -->
+                <div class="card-header d-flex justify-content-between align-items-center 
+                    {% if missao.status == 'concluida' %}bg-success bg-opacity-25
+                    {% elif missao.status == 'em_andamento' %}bg-warning bg-opacity-25
+                    {% elif missao.status == 'falha' %}bg-danger bg-opacity-25
+                    {% else %}bg-secondary bg-opacity-25{% endif %}"
+                    style="border-bottom: 2px solid #ffcc00;">
+                    <span class="badge 
+                        {% if missao.dificuldade == 'facil' %}bg-success
+                        {% elif missao.dificuldade == 'medio' %}bg-info
+                        {% elif missao.dificuldade == 'dificil' %}bg-warning text-dark
+                        {% elif missao.dificuldade == 'epico' %}bg-danger
+                        {% else %}bg-dark{% endif %}">
+                        {% if missao.dificuldade == 'facil' %}🌟
+                        {% elif missao.dificuldade == 'medio' %}⚔️
+                        {% elif missao.dificuldade == 'dificil' %}💀
+                        {% elif missao.dificuldade == 'epico' %}🔥
+                        {% else %}🏆{% endif %}
+                        {{ missao.get_dificuldade_display }}
+                    </span>
+                    <span class="badge 
+                        {% if missao.status == 'concluida' %}bg-success
+                        {% elif missao.status == 'em_andamento' %}bg-warning text-dark
+                        {% elif missao.status == 'falha' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ missao.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Título -->
+                    <h5 class="card-title text-warning mb-2">{{ missao.titulo }}</h5>
+                    
+                    <!-- Descrição -->
+                    <p class="card-text text-muted small mb-3">{{ missao.descricao|truncatewords:15 }}</p>
+                    
+                    <!-- Recompensas -->
+                    <div class="row g-2 mb-3">
+                        {% if missao.recompensa_xp > 0 %}
+                        <div class="col-6">
+                            <div class="bg-secondary bg-opacity-25 rounded p-2 text-center">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-star text-warning"></i> XP
+                                </small>
+                                <strong class="text-warning">+{{ missao.recompensa_xp }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if missao.recompensa_ouro > 0 %}
+                        <div class="col-6">
+                            <div class="bg-secondary bg-opacity-25 rounded p-2 text-center">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-coins text-warning"></i> Ouro
+                                </small>
+                                <strong class="text-warning">+{{ missao.recompensa_ouro }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Progresso do Personagem -->
+                    {% if personagem and missao.id in progressos.keys %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Seu Progresso</small>
+                            <small class="text-warning">{{ progressos|get_item:missao.id|get_progresso }}%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ progressos|get_item:missao.id|get_progresso }}%;">
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Botão Detalhes -->
+                    <a href="{% url 'detalhes_missao' missao.id %}" class="btn btn-outline-danger btn-sm w-100">
+                        <i class="fas fa-eye"></i> Ver Detalhes
+                    </a>
+                </div>
+                
+                <div class="card-footer text-muted text-center small">
+                    <i class="fas fa-calendar-alt"></i> Criada em {{ missao.data_criacao|date:"d/m/Y" }}
+                    {% if missao.criado_por %}
+                    por {{ missao.criado_por.username }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card bg-dark text-white border-secondary text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-scroll fa-4x text-muted mb-3"></i>
+                    <p class="text-muted fs-4">Nenhuma missão criada ainda.</p>
+                    {% if eh_mestre %}
+                    <p class="text-secondary">Crie uma missão para desafiar seus jogadores!</p>
+                    <a href="{% url 'criar_missao' mesa.id %}" class="btn btn-danger mt-3">
+                        <i class="fas fa-plus-circle"></i> Criar Missão
+                    </a>
+                    {% else %}
+                    <p class="text-secondary">Aguarde o mestre criar novas missões.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        border-color: #ffcc00 !important;
+        box-shadow: 0 8px 25px rgba(139, 0, 0, 0.3) !important;
+    }
+    .card {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+{% block extra_scripts %}
+<script>
+    // Função para obter progresso
+    function getProgresso(progressos, missaoId) {
+        if (progressos && progressos[missaoId]) {
+            return progressos[missaoId].progresso;
+        }
+        return 0;
+    }
+</script>
+{% endblock %}
+{% endblock %}

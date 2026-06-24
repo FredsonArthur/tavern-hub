@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+import random  # Adicionado para rolagens aleatórias
 
 # --- ENTIDADE: Item (Sistema de Inventário Many-to-Many) ---
 class Item(models.Model):
@@ -22,7 +23,6 @@ class Item(models.Model):
         choices=RARIDADE_CHOICES, 
         default='Comum'
     )
-    # Adicionado db_index para acelerar as buscas de Soft Delete
     ativo = models.BooleanField(default=True, db_index=True)
 
     def __str__(self):
@@ -53,15 +53,10 @@ class Personagem(models.Model):
     vida_atual = models.IntegerField(default=10)
     historia = models.TextField(blank=True)
     
-    # IMPLEMENTADO: Soft Delete com índice para performance
     ativo = models.BooleanField(default=True, db_index=True)
-
-    # IMPLEMENTADO: Relacionamento Many-to-Many para Inventário
     itens = models.ManyToManyField(Item, blank=True, related_name="possuidores")
 
-    # ========== NOVOS CAMPOS PARA ATRIBUTOS ==========
-    
-    # Atributos clássicos de RPG (D&D style)
+    # ========== ATRIBUTOS ==========
     forca = models.IntegerField(default=10, help_text="Força física, capacidade de dano e carga")
     destreza = models.IntegerField(default=10, help_text="Agilidade, reflexos e pontaria")
     constituicao = models.IntegerField(default=10, help_text="Resistência, saúde e fortitude")
@@ -69,30 +64,19 @@ class Personagem(models.Model):
     sabedoria = models.IntegerField(default=10, help_text="Intuição, percepção e vontade")
     carisma = models.IntegerField(default=10, help_text="Persuasão, liderança e presença")
     
-    # Atributos secundários (calculados automaticamente)
     pontos_vida_temporarios = models.IntegerField(default=0, help_text="PV temporários (escudos, bênçãos)")
     pontos_mana = models.IntegerField(default=0, help_text="Pontos de mana para magias")
     pontos_mana_maximo = models.IntegerField(default=0, help_text="Mana máxima")
     
-    # Experiência e progressão
     xp = models.IntegerField(default=0, help_text="Pontos de experiência")
     xp_proximo_nivel = models.IntegerField(default=300, help_text="XP necessário para o próximo nível")
-    
-    # Status de combate
     condicoes = models.CharField(max_length=200, blank=True, help_text="Condições atuais: Envenenado, Paralisado, etc.")
     
-    # ========== MÉTODOS AUXILIARES ==========
-    
+    # ========== MÉTODOS ==========
     def calcular_modificador(self, atributo_valor):
-        """
-        Calcula o modificador de atributo seguindo a regra D&D:
-        (valor - 10) // 2
-        Ex: 10 = +0, 12 = +1, 14 = +2, 8 = -1
-        """
         return (atributo_valor - 10) // 2
     
     def get_modificadores(self):
-        """Retorna dicionário com todos os modificadores"""
         return {
             'forca': self.calcular_modificador(self.forca),
             'destreza': self.calcular_modificador(self.destreza),
@@ -103,10 +87,6 @@ class Personagem(models.Model):
         }
     
     def calcular_pv_maximo(self):
-        """
-        Calcula PV máximo baseado no nível e constituição
-        Fórmula: Nível * (média do dado de vida da classe + mod Constituição)
-        """
         dados_vida_por_classe = {
             'Guerreiro': 10, 'Paladino': 10, 'Bárbaro': 12,
             'Mago': 6, 'Feiticeiro': 6, 'Bruxo': 8,
@@ -114,82 +94,57 @@ class Personagem(models.Model):
             'Clérigo': 8, 'Bardo': 8, 'Ranger': 10
         }
         dado_vida = dados_vida_por_classe.get(self.classe, 8)
-        media_dado = (dado_vida + 1) // 2  # Média arredondada para cima
+        media_dado = (dado_vida + 1) // 2
         mod_con = self.calcular_modificador(self.constituicao)
-        
         return (media_dado + mod_con) * self.nivel
     
     def calcular_mana_maximo(self):
-        """
-        Calcula mana máxima baseada no nível e inteligência (para magos)
-        """
         base_mana = self.nivel * 5
         mod_int = self.calcular_modificador(self.inteligencia)
         return max(0, base_mana + (mod_int * self.nivel))
     
     def curar(self, quantidade):
-        """Cura o personagem e retorna a quantidade real curada"""
         curado = min(quantidade, self.vida_maxima - self.vida_atual)
         self.vida_atual += curado
         self.save()
         return curado
     
     def tomar_dano(self, quantidade):
-        """Aplica dano ao personagem, considerando PV temporários"""
         dano_restante = quantidade
-        
-        # Primeiro, remove dos PV temporários
         if self.pontos_vida_temporarios > 0:
             absorvido = min(self.pontos_vida_temporarios, dano_restante)
             self.pontos_vida_temporarios -= absorvido
             dano_restante -= absorvido
-        
-        # Depois, aplica nos PV reais
         if dano_restante > 0:
             self.vida_atual -= dano_restante
-        
         self.save()
-        
-        # Verifica se morreu
         if self.vida_atual <= 0:
             self.vida_atual = 0
             self.save()
             return {'morreu': True, 'dano': quantidade, 'vida_restante': 0}
-        
         return {'morreu': False, 'dano': quantidade, 'vida_restante': self.vida_atual}
     
     def ganhar_xp(self, quantidade):
-        """Adiciona XP e verifica se subiu de nível"""
         self.xp += quantidade
         subiu_nivel = False
-        
         while self.xp >= self.xp_proximo_nivel:
             self.subir_nivel()
             subiu_nivel = True
-            
         self.save()
         return {'subiu_nivel': subiu_nivel, 'xp_atual': self.xp, 'xp_necessario': self.xp_proximo_nivel}
     
     def subir_nivel(self):
-        """Avança de nível e atualiza atributos"""
         self.nivel += 1
         self.xp -= self.xp_proximo_nivel
-        
-        # Recalcula PV máximo
         novo_pv_max = self.calcular_pv_maximo()
         aumento_pv = novo_pv_max - self.vida_maxima
         self.vida_maxima = novo_pv_max
         self.vida_atual += aumento_pv
-        
-        # Recalcula mana máximo
         novo_mana_max = self.calcular_mana_maximo()
         aumento_mana = novo_mana_max - self.pontos_mana_maximo
         self.pontos_mana_maximo = novo_mana_max
         self.pontos_mana += aumento_mana
-        
-        # Aumenta XP necessário para o próximo nível (20% a mais a cada nível)
         self.xp_proximo_nivel = int(self.xp_proximo_nivel * 1.2)
-        
         self.save()
 
     def __str__(self):
@@ -201,13 +156,10 @@ class Personagem(models.Model):
 class Rolagem(models.Model):
     personagem = models.ForeignKey(Personagem, on_delete=models.CASCADE, null=True, blank=True)
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, null=True, blank=True)
-    
     jogador_nome = models.CharField(max_length=100, default="Aventureiro")
     tipo_dado = models.CharField(max_length=10, default="D20")
     resultado = models.IntegerField()
     data_hora = models.DateTimeField(default=timezone.now)
-
-    # REQUISITO: "Rollback" - Auditoria de dados
     editado = models.BooleanField(default=False)
     resultado_anterior = models.IntegerField(null=True, blank=True)
     motivo_edicao = models.CharField(max_length=255, null=True, blank=True)
@@ -216,3 +168,277 @@ class Rolagem(models.Model):
         nome = self.personagem.nome if self.personagem else self.jogador_nome
         status = " (Editado)" if self.editado else ""
         return f"{nome} rolou {self.tipo_dado}: {self.resultado}{status}"
+
+
+# ========== SISTEMA DE COMBATE ==========
+
+class Combate(models.Model):
+    """Representa uma batalha entre heróis e inimigos"""
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, related_name="combates")
+    nome = models.CharField(max_length=100, default="⚔️ Combate")
+    ativo = models.BooleanField(default=True)
+    rodada = models.IntegerField(default=1)
+    turno_atual = models.IntegerField(default=0)
+    data_inicio = models.DateTimeField(default=timezone.now)
+    data_fim = models.DateTimeField(null=True, blank=True)
+    
+    STATUS_CHOICES = [
+        ('preparando', 'Preparando'),
+        ('em_andamento', 'Em Andamento'),
+        ('concluido', 'Concluído'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='preparando')
+    
+    def __str__(self):
+        return f"{self.nome} - {self.mesa.titulo} (Rodada {self.rodada})"
+    
+    def proximo_turno(self):
+        """Avança para o próximo turno"""
+        participantes = self.participantes.filter(vivo=True).order_by('ordem')
+        if not participantes.exists():
+            return None
+        
+        # Avança para o próximo participante vivo
+        self.turno_atual = (self.turno_atual + 1) % participantes.count()
+        
+        # Se voltou ao início, incrementa a rodada
+        if self.turno_atual == 0:
+            self.rodada += 1
+        
+        self.save()
+        return participantes[self.turno_atual]
+    
+    def finalizar(self):
+        """Finaliza o combate"""
+        self.status = 'concluido'
+        self.data_fim = timezone.now()
+        self.ativo = False
+        self.save()
+
+
+class ParticipanteCombate(models.Model):
+    """Participante do combate (personagem ou monstro)"""
+    combate = models.ForeignKey(Combate, on_delete=models.CASCADE, related_name="participantes")
+    personagem = models.ForeignKey(Personagem, on_delete=models.CASCADE, null=True, blank=True)
+    
+    nome = models.CharField(max_length=100)
+    TIPO_CHOICES = [
+        ('heroi', 'Herói'),
+        ('monstro', 'Monstro'),
+        ('npc', 'NPC'),
+    ]
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='heroi')
+    
+    iniciativa = models.IntegerField(default=0)
+    ordem = models.IntegerField(default=0)
+    vivo = models.BooleanField(default=True)
+    
+    vida_atual = models.IntegerField(default=10)
+    vida_maxima = models.IntegerField(default=10)
+    
+    CONDICOES = [
+        ('normal', 'Normal'),
+        ('envenenado', 'Envenenado'),
+        ('paralisado', 'Paralisado'),
+        ('confuso', 'Confuso'),
+        ('cego', 'Cego'),
+        ('surdo', 'Surdo'),
+        ('assustado', 'Assustado'),
+        ('invisivel', 'Invisível'),
+    ]
+    condicao = models.CharField(max_length=20, choices=CONDICOES, default='normal')
+    defesa = models.IntegerField(default=10)
+    
+    class Meta:
+        ordering = ['ordem']
+    
+    def __str__(self):
+        status = "💀" if not self.vivo else "❤️"
+        return f"{self.nome} {status} (Iniciativa: {self.iniciativa})"
+    
+    def aplicar_dano(self, dano):
+        """Aplica dano ao participante"""
+        if not self.vivo:
+            return {'sucesso': False, 'mensagem': f'{self.nome} já está morto!'}
+        
+        self.vida_atual = max(0, self.vida_atual - dano)
+        if self.vida_atual <= 0:
+            self.vivo = False
+            self.vida_atual = 0
+        
+        self.save()
+        return {
+            'sucesso': True,
+            'vida_restante': self.vida_atual,
+            'vivo': self.vivo,
+            'mensagem': f'{self.nome} recebeu {dano} de dano!' if self.vivo else f'💀 {self.nome} foi derrotado!'
+        }
+    
+    def curar(self, quantidade):
+        """Cura o participante"""
+        if not self.vivo:
+            return {'sucesso': False, 'mensagem': f'{self.nome} está morto e não pode ser curado!'}
+        
+        curado = min(quantidade, self.vida_maxima - self.vida_atual)
+        self.vida_atual += curado
+        self.save()
+        return {
+            'sucesso': True,
+            'curado': curado,
+            'vida_atual': self.vida_atual,
+            'mensagem': f'{self.nome} recuperou {curado} de vida!'
+        }
+
+
+class AcaoCombate(models.Model):
+    """Registro de ações realizadas durante o combate"""
+    participante = models.ForeignKey(ParticipanteCombate, on_delete=models.CASCADE)
+    combate = models.ForeignKey(Combate, on_delete=models.CASCADE, related_name="acoes")
+    rodada = models.IntegerField()
+    turno = models.IntegerField()
+    
+    TIPO_ACOES = [
+        ('ataque', 'Ataque'),
+        ('defesa', 'Defesa'),
+        ('magia', 'Magia'),
+        ('cura', 'Cura'),
+        ('especial', 'Especial'),
+        ('movimento', 'Movimento'),
+        ('outro', 'Outro'),
+    ]
+    tipo = models.CharField(max_length=20, choices=TIPO_ACOES)
+    descricao = models.TextField()
+    alvo = models.CharField(max_length=100, null=True, blank=True)
+    resultado = models.TextField(null=True, blank=True)
+    data_hora = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.participante.nome} - {self.tipo} (Rodada {self.rodada})"
+
+# ========== SISTEMA DE MISSÕES ==========
+
+class Missao(models.Model):
+    """Representa uma missão que pode ser concluída pelos jogadores"""
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, related_name="missoes")
+    
+    titulo = models.CharField(max_length=200)
+    descricao = models.TextField()
+    objetivos = models.TextField(help_text="Descreva os objetivos da missão")
+    
+    # Recompensas
+    recompensa_xp = models.IntegerField(default=0)
+    recompensa_ouro = models.IntegerField(default=0)
+    
+    # Status
+    STATUS_CHOICES = [
+        ('disponivel', 'Disponível'),
+        ('em_andamento', 'Em Andamento'),
+        ('concluida', 'Concluída'),
+        ('falha', 'Falha'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='disponivel')
+    
+    # Datas
+    data_criacao = models.DateTimeField(default=timezone.now)
+    data_inicio = models.DateTimeField(null=True, blank=True)
+    data_conclusao = models.DateTimeField(null=True, blank=True)
+    prazo = models.DateTimeField(null=True, blank=True, help_text="Data limite para concluir a missão")
+    
+    # Quem criou
+    criado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name="missoes_criadas")
+    
+    # Dificuldade
+    DIFICULDADE_CHOICES = [
+        ('facil', 'Fácil'),
+        ('medio', 'Médio'),
+        ('dificil', 'Difícil'),
+        ('epico', 'Épico'),
+        ('lendario', 'Lendário'),
+    ]
+    dificuldade = models.CharField(max_length=20, choices=DIFICULDADE_CHOICES, default='medio')
+    
+    def __str__(self):
+        return f"{self.titulo} - {self.mesa.titulo}"
+    
+    def concluir(self):
+        """Conclui a missão e distribui recompensas"""
+        self.status = 'concluida'
+        self.data_conclusao = timezone.now()
+        self.save()
+        
+        # Distribui recompensas para todos os personagens da mesa
+        personagens = self.mesa.personagens.filter(ativo=True)
+        for personagem in personagens:
+            if self.recompensa_xp > 0:
+                personagem.ganhar_xp(self.recompensa_xp)
+        
+        return {
+            'xp_distribuido': self.recompensa_xp * personagens.count(),
+            'personagens_afetados': personagens.count()
+        }
+
+
+class MissaoPersonagem(models.Model):
+    """Relaciona personagens com missões (progresso individual)"""
+    missao = models.ForeignKey(Missao, on_delete=models.CASCADE, related_name="progressos")
+    personagem = models.ForeignKey(Personagem, on_delete=models.CASCADE, related_name="missoes")
+    
+    progresso = models.IntegerField(default=0, help_text="Progresso atual da missão (0-100)")
+    concluida = models.BooleanField(default=False)
+    data_conclusao = models.DateTimeField(null=True, blank=True)
+    
+    # Notas do mestre sobre este personagem na missão
+    notas = models.TextField(blank=True, help_text="Notas do mestre sobre o progresso deste personagem")
+    
+    class Meta:
+        unique_together = ['missao', 'personagem']
+    
+    def __str__(self):
+        status = "✅" if self.concluida else "⏳"
+        return f"{status} {self.personagem.nome} - {self.missao.titulo} ({self.progresso}%)"
+    
+    def atualizar_progresso(self, novo_progresso):
+        """Atualiza o progresso da missão para este personagem"""
+        self.progresso = min(100, max(0, novo_progresso))
+        if self.progresso >= 100 and not self.concluida:
+            self.concluida = True
+            self.data_conclusao = timezone.now()
+        self.save()
+        return self.progresso
+    
+# ========== SISTEMA DE NOTIFICAÇÕES ==========
+
+class Notificacao(models.Model):
+    """Notificações para usuários sobre eventos do sistema"""
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notificacoes")
+    
+    titulo = models.CharField(max_length=200)
+    mensagem = models.TextField()
+    
+    TIPO_CHOICES = [
+        ('info', 'Informação'),
+        ('sucesso', 'Sucesso'),
+        ('alerta', 'Alerta'),
+        ('perigo', 'Perigo'),
+        ('missao', 'Missão'),
+        ('combate', 'Combate'),
+        ('sistema', 'Sistema'),
+    ]
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='info')
+    
+    lida = models.BooleanField(default=False)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    
+    # Link para ação (opcional)
+    link_url = models.CharField(max_length=500, blank=True, null=True)
+    link_texto = models.CharField(max_length=100, blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-data_criacao']
+    
+    def __str__(self):
+        return f"{self.titulo} - {self.usuario.username} ({'✅' if self.lida else '🔴'})"
+    
+    def marcar_como_lida(self):
+        self.lida = True
+        self.save()

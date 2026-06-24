@@ -1,0 +1,241 @@
+{% extends 'lobby/base.html' %}
+
+{% block title %}{{ missao.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navegação -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning mb-0" style="font-family: 'Cinzel', 'Georgia', serif;">
+                <i class="fas fa-scroll"></i> {{ missao.titulo }}
+            </h2>
+            <p class="text-muted small">{{ missao.mesa.titulo }}</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_missoes' missao.mesa.id %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Coluna Esquerda: Informações da Missão -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <div class="card-header bg-danger bg-opacity-25" style="border-bottom: 2px solid #8b0000;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge 
+                            {% if missao.dificuldade == 'facil' %}bg-success
+                            {% elif missao.dificuldade == 'medio' %}bg-info
+                            {% elif missao.dificuldade == 'dificil' %}bg-warning text-dark
+                            {% elif missao.dificuldade == 'epico' %}bg-danger
+                            {% else %}bg-dark{% endif %}">
+                            {% if missao.dificuldade == 'facil' %}🌟
+                            {% elif missao.dificuldade == 'medio' %}⚔️
+                            {% elif missao.dificuldade == 'dificil' %}💀
+                            {% elif missao.dificuldade == 'epico' %}🔥
+                            {% else %}🏆{% endif %}
+                            {{ missao.get_dificuldade_display }}
+                        </span>
+                        <span class="badge 
+                            {% if missao.status == 'concluida' %}bg-success
+                            {% elif missao.status == 'em_andamento' %}bg-warning text-dark
+                            {% elif missao.status == 'falha' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ missao.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Descrição -->
+                    <h6 class="text-warning">📖 Descrição</h6>
+                    <p class="text-light mb-4">{{ missao.descricao }}</p>
+                    
+                    <!-- Objetivos -->
+                    <h6 class="text-warning">🎯 Objetivos</h6>
+                    <p class="text-light mb-4">{{ missao.objetivos|default:"Nenhum objetivo específico definido." }}</p>
+                    
+                    <!-- Recompensas -->
+                    <h6 class="text-warning">🏆 Recompensas</h6>
+                    <div class="row g-2 mb-4">
+                        {% if missao.recompensa_xp > 0 %}
+                        <div class="col-4">
+                            <div class="bg-secondary bg-opacity-25 rounded p-2 text-center">
+                                <i class="fas fa-star text-warning"></i>
+                                <strong class="text-warning d-block">+{{ missao.recompensa_xp }} XP</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if missao.recompensa_ouro > 0 %}
+                        <div class="col-4">
+                            <div class="bg-secondary bg-opacity-25 rounded p-2 text-center">
+                                <i class="fas fa-coins text-warning"></i>
+                                <strong class="text-warning d-block">+{{ missao.recompensa_ouro }} Ouro</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if not missao.recompensa_xp and not missao.recompensa_ouro %}
+                        <div class="col-12">
+                            <p class="text-muted">Sem recompensas definidas.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Informações Adicionais -->
+                    <div class="row text-muted small">
+                        <div class="col-6">
+                            <i class="fas fa-calendar-alt"></i> Criada: {{ missao.data_criacao|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-user"></i> Mestre: {{ missao.criado_por.username }}
+                        </div>
+                        {% if missao.prazo %}
+                        <div class="col-6">
+                            <i class="fas fa-clock"></i> Prazo: {{ missao.prazo|date:"d/m/Y H:i" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Direita: Progresso e Ações -->
+        <div class="col-md-4">
+            <!-- Progresso do Personagem -->
+            <div class="card bg-dark text-white border-secondary shadow-lg mb-4">
+                <div class="card-header bg-secondary bg-opacity-25">
+                    <h6 class="mb-0 text-warning">
+                        <i class="fas fa-chart-line"></i> Seu Progresso
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if progresso_personagem %}
+                        <h2 class="display-3 text-warning">{{ progresso_personagem.progresso }}%</h2>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ progresso_personagem.progresso }}%;">
+                            </div>
+                        </div>
+                        <p class="text-muted small mt-2">
+                            {% if progresso_personagem.concluida %}
+                                <span class="text-success">✅ Concluída!</span>
+                            {% else %}
+                                <span class="text-warning">⏳ Em andamento</span>
+                            {% endif %}
+                        </p>
+                    {% else %}
+                        <p class="text-muted">Você ainda não iniciou esta missão.</p>
+                        <p class="text-muted small">O mestre precisa atribuir progresso a você.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Painel do Mestre -->
+            {% if eh_mestre %}
+            <div class="card bg-dark text-white border-danger shadow-lg">
+                <div class="card-header bg-danger bg-opacity-25">
+                    <h6 class="mb-0 text-danger">
+                        <i class="fas fa-crown"></i> Painel do Mestre
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Atualizar Progresso -->
+                    {% if todos_progressos %}
+                    <h6 class="text-warning small">Progresso dos Personagens</h6>
+                    {% for p in todos_progressos %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small">{{ p.personagem.nome }}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-warning">{{ p.progresso }}%</span>
+                            <button class="btn btn-sm btn-outline-warning update-progress" 
+                                    data-personagem="{{ p.personagem.id }}" 
+                                    data-progresso="{{ p.progresso }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted small">Nenhum personagem iniciou esta missão.</p>
+                    {% endif %}
+                    
+                    <hr class="border-secondary">
+                    
+                    <!-- Ações do Mestre -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalProgresso">
+                            <i class="fas fa-plus"></i> Atualizar Progresso
+                        </button>
+                        {% if missao.status != 'concluida' %}
+                        <a href="{% url 'concluir_missao' missao.id %}" class="btn btn-sm btn-success" 
+                           onclick="return confirm('Concluir a missão {{ missao.titulo }}? Todos os personagens receberão as recompensas.')">
+                            <i class="fas fa-check-circle"></i> Concluir Missão
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Atualizar Progresso (Mestre) -->
+{% if eh_mestre %}
+<div class="modal fade" id="modalProgresso" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-warning">
+                    <i class="fas fa-edit"></i> Atualizar Progresso
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-progresso" method="POST" action="{% url 'atualizar_progresso_missao' missao.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label text-warning">Personagem</label>
+                        <select name="personagem_id" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="">Selecione...</option>
+                            {% for p in missao.mesa.personagens.filter.ativo %}
+                            <option value="{{ p.id }}">{{ p.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-warning">Progresso (%)</label>
+                        <input type="number" name="progresso" class="form-control bg-dark text-white border-secondary" 
+                               min="0" max="100" value="50" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="fas fa-save"></i> Salvar Progresso
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .card {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .display-3 {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
