@@ -1,0 +1,110 @@
+services:
+  database:
+    container_name: database
+    image: postgres:16
+    environment:
+      POSTGRES_DB: tavernhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_HOST: '%'
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - my-network
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - '-q'
+        - ping
+      retries: 3
+      timeout: 5s
+      interval: 30s
+
+  redis:
+    image: redis:8.2-alpine
+    container_name: redis_cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass myredispassword --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "myredispassword", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  rollstore:
+    container_name: rollstore
+    build:
+      context: services/roll-store
+      dockerfile: Dockerfile
+    restart: always
+    env_file: services/roll-store/.env
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - my-network
+
+  backend:
+    container_name: backend
+    build:
+      context: services/backend
+      dockerfile: Dockerfile
+    env_file: services/backend/.env
+    ports:
+      - "80:8000"
+    networks:
+      - my-network
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rollstore:
+        condition: service_started
+
+volumes:
+  rabbitmq_data:
+    driver: local
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  my-network:

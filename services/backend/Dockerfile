@@ -13,7 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia o restante do código
 COPY . .
 
+RUN chmod +x build.sh
+
 # Expõe a porta do Django
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "./build.sh && daphne -b 0.0.0.0 -p 8000 core.asgi:application"]

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Lê configuração do ambiente ou usa padrão local
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672';
 const QUEUE_NAME = process.env.RABBITMQ_QUEUE || 'cronicas_rolagem';
 const STORE_FILE_PATH = path.join(__dirname, 'rolagens_store.json');
 
@@ -37,11 +37,11 @@ async function iniciarConsumidor() {
         canal.consume(QUEUE_NAME, (mensagem) => {
             if (mensagem !== null) {
                 const conteudo = JSON.parse(mensagem.content.toString());
-                
+
                 console.log(`\x1b[32m%s\x1b[0m`, `🎲 [DADO RECEBIDO]`);
                 console.log(`👤 Jogador:  ${conteudo.jogador_nome}`);
                 console.log(`🎲 Dado:     ${conteudo.tipo_dado} | Resultado: ${conteudo.resultado}`);
-                
+
                 salvarNaStore(conteudo);
                 console.log(`-----------------------------------------`);
                 canal.ack(mensagem);
